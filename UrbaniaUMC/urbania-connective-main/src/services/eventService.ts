@@ -1,6 +1,4 @@
-import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+import api from '@/lib/axios';
 
 export interface Event {
     _id: string;
@@ -43,32 +41,32 @@ interface EventsResponse {
 export const eventService = {
     // Get all events
     getAllEvents: async (): Promise<Event[]> => {
-        const response = await axios.get<EventsResponse>(`${API_URL}/api/events`);
-        console.log('API Response:', response.data);
-        return response.data.events;
+            const response = await api.get<EventsResponse>('/events');
+            console.log('API Response:', response.data);
+            return response.data.events;
     },
 
     // Get featured events
     getFeaturedEvents: async (): Promise<Event[]> => {
-        const response = await axios.get(`${API_URL}/api/events/featured`);
+        const response = await api.get('/events/featured');
         return response.data;
     },
 
     // Get upcoming events
     getUpcomingEvents: async (): Promise<Event[]> => {
-        const response = await axios.get(`${API_URL}/api/events/upcoming`);
+        const response = await api.get('/events/upcoming');
         return response.data;
     },
 
     // Get events by category
     getEventsByCategory: async (category: string): Promise<Event[]> => {
-        const response = await axios.get(`${API_URL}/api/events/category/${category}`);
+        const response = await api.get(`/events/category/${category}`);
         return response.data;
     },
 
     // Get single event by ID
     getEventById: async (id: string): Promise<Event> => {
-        const response = await axios.get<Event>(`${API_URL}/api/events/${id}`);
+        const response = await api.get<Event>(`/events/${id}`);
         return response.data;
     }
 }; 

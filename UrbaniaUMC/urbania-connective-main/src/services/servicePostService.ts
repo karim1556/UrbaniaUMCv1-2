@@ -1,6 +1,4 @@
-import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+import api from '@/lib/axios';
 
 export interface ServicePost {
   _id: string;
@@ -14,15 +12,15 @@ export interface ServicePost {
 
 export const servicePostService = {
   getPostsByService: async (serviceId: string): Promise<ServicePost[]> => {
-    const resp = await axios.get(`${API_URL}/api/service-posts`, { params: { serviceId } });
+    const resp = await api.get('/service-posts', { params: { serviceId } });
     return resp.data;
   },
   getAllPosts: async (): Promise<ServicePost[]> => {
-    const resp = await axios.get(`${API_URL}/api/service-posts`);
+    const resp = await api.get('/service-posts');
     return resp.data;
   },
   getPostById: async (id: string): Promise<ServicePost> => {
-    const resp = await axios.get(`${API_URL}/api/service-posts/${id}`);
+    const resp = await api.get(`/service-posts/${id}`);
     return resp.data;
   }
 };

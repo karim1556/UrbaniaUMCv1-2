@@ -32,25 +32,17 @@ const Contact = () => {
     setIsSubmitting(true);
     
     try {
-      const response = await fetch('http://localhost:4000/api/contact/submit', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: formData.name.trim(),
-          email: formData.email.trim().toLowerCase(),
-          phoneno: formData.phone.trim(),  // Note: frontend uses 'phone', backend expects 'phoneno'
-          subject: formData.subject.trim(),
-          message: formData.message.trim()
-        }),
+      // Use shared axios instance so base URL comes from VITE_API_URL and avoids localhost in production
+      const api = (await import('@/lib/axios')).default;
+      const response = await api.post('/contact/submit', {
+        name: formData.name.trim(),
+        email: formData.email.trim().toLowerCase(),
+        phoneno: formData.phone.trim(),
+        subject: formData.subject.trim(),
+        message: formData.message.trim()
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to send message');
-      }
+      const data = response.data;
 
       toast.success("Your message has been sent. We'll get back to you soon!");
       setFormData({

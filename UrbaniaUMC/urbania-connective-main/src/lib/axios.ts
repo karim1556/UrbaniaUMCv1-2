@@ -1,7 +1,9 @@
 import axios from 'axios';
 
 // Log configuration for debugging
-const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+const rawBase = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+// Ensure base ends with /api (normalize incoming values)
+const apiBaseUrl = rawBase.endsWith('/api') ? rawBase.replace(/\/+$/, '') : rawBase.replace(/\/+$/, '') + '/api';
 console.log('API base URL:', apiBaseUrl);
 
 // Create Axios instance with appropriate configuration
@@ -10,8 +12,8 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true, // This is important for handling cookies
-  timeout: 15000, // Increased timeout for potentially slow connections
+  withCredentials: true,
+  timeout: 15000,
 });
 
 // Request interceptor
@@ -140,7 +142,7 @@ export const testApiConnection = async () => {
 export const testRegistrationAPI = async () => {
   try {
     console.log('Testing registration API...');
-    const response = await api.get('/api/registrations/test');
+    const response = await api.get('/registrations/test');
     console.log('Registration API test successful:', response.data);
     return { success: true, data: response.data };
   } catch (error) {
