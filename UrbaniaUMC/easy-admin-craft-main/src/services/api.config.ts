@@ -14,6 +14,11 @@ const api = axios.create({
 // Request interceptor
 api.interceptors.request.use(
   (config) => {
+    // Normalize baseURL and avoid double '/api' in final URL
+    if (config.baseURL) config.baseURL = String(config.baseURL).replace(/\/+$/, '');
+    if (config.url && config.baseURL && String(config.baseURL).endsWith('/api') && String(config.url).startsWith('/api')) {
+      config.url = String(config.url).replace(/^\/api/, '');
+    }
     const token = localStorage.getItem('token');
     console.log('Making request:', {
       url: config.url,
