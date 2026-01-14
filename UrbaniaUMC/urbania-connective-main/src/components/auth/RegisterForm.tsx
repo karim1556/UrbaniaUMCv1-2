@@ -291,11 +291,15 @@ const RegisterForm = () => {
           </div>
           <div className="space-y-1 w-full">
             <Label htmlFor="residenceType">Residence Type</Label>
-            <select id="residenceType" value={residenceType} onChange={(e) => setResidenceType(e.target.value as 'owner' | 'tenant' | '')} className="w-full border rounded px-3 py-2">
-              <option value="">Select</option>
-              <option value="owner">Owner</option>
-              <option value="tenant">Tenant</option>
-            </select>
+            <Select value={residenceType} onValueChange={(v) => setResidenceType(v as 'owner' | 'tenant' | '')}>
+              <SelectTrigger id="residenceType" className="w-full">
+                <SelectValue placeholder="Select" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="owner">Owner</SelectItem>
+                <SelectItem value="tenant">Tenant</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-1 w-full">
             <Label htmlFor="flatNo">Flat No</Label>
