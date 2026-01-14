@@ -205,7 +205,12 @@ const CourseRegistration = () => {
     if (!form.name) errors.name = "Name is required";
     if (!form.email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.email)) errors.email = "Valid email required";
     if (!form.phone) errors.phone = "Phone is required";
-    if (!form.age || isNaN(Number(form.age))) errors.age = "Valid age required";
+    const ageNum = Number(form.age);
+    if (!form.age || isNaN(ageNum)) {
+      errors.age = "Valid age required";
+    } else if (ageNum < 1 || ageNum > 120) {
+      errors.age = "Age must be between 1 and 120";
+    }
     if (!form.gender) errors.gender = "Gender is required";
     if (!form.address) errors.address = "Address is required";
   }
@@ -227,12 +232,31 @@ const CourseRegistration = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
+    // Re-validate all required fields before submit
+    const submitErrors: Errors = {};
+    if (!form.name) submitErrors.name = "Name is required";
+    if (!form.email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.email)) submitErrors.email = "Valid email required";
+    if (!form.phone) submitErrors.phone = "Phone is required";
+    const ageNum = Number(form.age);
+    if (!form.age || isNaN(ageNum)) submitErrors.age = "Valid age required";
+    else if (ageNum < 1 || ageNum > 120) submitErrors.age = "Age must be between 1 and 120";
+    if (!form.gender) submitErrors.gender = "Gender is required";
+    if (!form.address) submitErrors.address = "Address is required";
+    if (Object.keys(submitErrors).length > 0) {
+      // move back to first step with errors
+      setTouched(Object.keys(submitErrors).reduce((acc, k) => ({ ...acc, [k]: true }), {} as Touched));
+      toast.error("Please fix the errors before submitting.");
+      setStep(0);
+      setSubmitting(false);
+      return;
+    }
     try {
       const response = await fetch("/api/course-registration", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
+          age: Number(form.age),
           userId: user?._id,
           courseId: course.id,
           courseTitle: course.title,
@@ -243,9 +267,11 @@ const CourseRegistration = () => {
         navigate("/education");
       } else {
         const data = await response.json();
-        toast.error(data.message || "Submission failed.");
+        // Show server-provided message when available
+        toast.error(data?.message || "Submission failed. Please try again later.");
       }
     } catch (err) {
+      console.error("Registration submit error:", err);
       toast.error("Network/server error. Please try again later.");
     } finally {
       setSubmitting(false);

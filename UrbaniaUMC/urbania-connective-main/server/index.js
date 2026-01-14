@@ -18,6 +18,7 @@ const userRoutes = require('./routes/userRoutes');
 const registrationRoutes = require('./routes/registrationRoutes');
 const courseRegistrationRoutes = require('./routes/courseRegistrationRoutes');
 const servicePostRoutes = require('./routes/servicePostRoutes');
+const groqChatRoutes = require('./routes/groqChat');
 
 // Load environment variables
 dotenv.config();
@@ -84,6 +85,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/registrations', registrationRoutes);
 app.use('/api/course-registration', courseRegistrationRoutes);
 app.use('/api/service-posts', servicePostRoutes);
+app.use('/api/groq', groqChatRoutes);
 
 // Basic route
 app.get('/', (req, res) => {

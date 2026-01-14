@@ -232,7 +232,7 @@ const EventDetail = () => {
                           line.trim() && (
                             <li key={index} className="flex items-start">
                               <span className="text-primary mr-2">•</span>
-                              <span className="text-muted-foreground leading-relaxed">{line}</span>
+                              <span className="text-muted-foreground leading-relaxed break-words break-all whitespace-normal max-w-full">{line}</span>
                             </li>
                           )
                         ))}
