@@ -9,5 +9,7 @@ router.get('/:id', getServicePostById);
 
 // Admin: create post
 router.post('/', auth, checkRole(['admin']), createServicePost);
+// Admin: delete post
+router.delete('/:id', auth, checkRole(['admin']), require('../controller/servicePostController').deleteServicePost);
 
 module.exports = router;

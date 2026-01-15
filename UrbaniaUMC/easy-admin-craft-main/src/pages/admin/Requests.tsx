@@ -48,8 +48,42 @@ const RequestsPage = () => {
 
   const fetchContacts = async () => {
     try {
+      // Fetch regular contact messages
       const data = await contactService.getAllContacts();
-      setContacts(data || []);
+      const baseContacts = data || [];
+
+      // Also fetch service registrations (service requests submitted via contact form)
+      let serviceRequests: any[] = [];
+      try {
+        serviceRequests = await contactService.getAllServiceRequests() || [];
+        console.debug('RequestsPage: fetched service registrations', serviceRequests?.length, serviceRequests);
+      } catch (err) {
+        // If endpoint missing or fails, continue with base contacts
+        console.warn('Failed to fetch service registrations:', err);
+        serviceRequests = [];
+      }
+
+      const mappedRequests = (serviceRequests || []).map((s: any) => ({
+        // prefix to distinguish service registrations from regular contact messages
+        _id: `sr_${s._id}`,
+        name: `${s.firstName || s.name || ''} ${s.lastName || ''}`.trim(),
+        email: s.email || (s.user && s.user.email) || '',
+        category: s.serviceType || (s.category) || '',
+        phoneno: s.phone || s.phoneno || s.phoneNumber || '',
+        subject: s.requestTitle || s.subject || s.serviceType || `Service Request: ${s.serviceType || ''}`,
+        message: s.description || s.message || '',
+        status: s.completionStatus === 'completed' ? 'read' : 'new',
+        readAt: null,
+        repliedAt: null,
+        reply: null,
+        createdAt: s.createdAt
+      }));
+
+      // Merge contact messages and service registrations into requests list
+      // Ensure unique ids by prefixing service registrations if needed
+      const combined = [...baseContacts, ...mappedRequests];
+      console.debug('RequestsPage: combined contacts count', combined.length);
+      setContacts(combined || []);
     } catch (error) {
       toast.error('Failed to fetch requests');
       console.error('Error fetching contact messages:', error);
@@ -256,6 +290,7 @@ const RequestsPage = () => {
                     <th className="text-left py-3 px-4 font-semibold border-l border-gray-200 cursor-pointer" onClick={() => handleSort('createdAt')}>
                       Date {sortBy === 'createdAt' && (sortDir === 'asc' ? '▲' : '▼')}
                     </th>
+                    <th className="text-left py-3 px-4 font-semibold border-l border-gray-200">Source</th>
                     <th className="text-right py-3 px-4 font-semibold border-l border-gray-200 rounded-tr-xl">Actions</th>
                   </tr>
                 </thead>
@@ -292,6 +327,11 @@ const RequestsPage = () => {
                       <td className="py-4 px-4 max-w-[260px] border-l border-gray-200 truncate" title={contact.subject}>{truncate(contact.subject || '', 40)}</td>
                       <td className="py-4 px-4 max-w-[140px] border-l border-gray-200 truncate" title={contact.phoneno}>{contact.phoneno}</td>
                       <td className="py-4 px-4 border-l border-gray-200">{new Date(contact.createdAt).toLocaleDateString()}</td>
+                      <td className="py-4 px-4 border-l border-gray-200 max-w-[200px] truncate" title={JSON.stringify({ _id: contact._id, source: contact._id && String(contact._id).startsWith('sr_') ? 'registration' : contact._id && String(contact._id).startsWith('post_') ? 'post' : 'contact', meta: (contact as any).meta || null })}>
+                        <div className="text-xs text-gray-500">
+                          {contact._id && String(contact._id).startsWith('sr_') ? 'Registration' : contact._id && String(contact._id).startsWith('post_') ? 'Post' : 'Contact'} · {String(contact._id).slice(0, 12)}
+                        </div>
+                      </td>
                       <td className="py-4 px-4 text-right space-x-2 border-l border-gray-200">
                         <Popover>
                           <PopoverTrigger asChild>
@@ -314,12 +354,16 @@ const RequestsPage = () => {
                                 <CheckCircle className="h-4 w-4" /> Mark as Read
                               </button>
                             )}
-                            <button
-                              className="w-full flex items-center gap-2 px-3 py-2 hover:bg-red-100 text-red-600 rounded text-left"
-                              onClick={() => { setContactToDelete(contact); setDeleteDialogOpen(true); }}
-                            >
-                              <Trash2 className="h-4 w-4" /> Delete
-                            </button>
+                            {!String(contact._id).startsWith('sr_') ? (
+                              <button
+                                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-red-100 text-red-600 rounded text-left"
+                                onClick={() => { setContactToDelete(contact); setDeleteDialogOpen(true); }}
+                              >
+                                <Trash2 className="h-4 w-4" /> Delete
+                              </button>
+                            ) : (
+                              <div className="px-3 py-2 text-xs text-gray-500">Registration (no delete)</div>
+                            )}
                           </PopoverContent>
                         </Popover>
                       </td>

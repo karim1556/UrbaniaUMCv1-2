@@ -54,26 +54,11 @@ const ServicesPage = () => {
   }, []);
 
   const fetchContacts = async () => {
-    try {
-      // Fetch service requests and map them to the contact-like shape used by this table
-      const data = await contactService.getAllServiceRequests();
-      // fetch admin-created service posts and merge them
+      try {
+      // Fetch only admin-created service posts for the Services page
       const posts = await servicePostService.getAllPosts();
-
-      const mappedRequests = (data || []).map((s: any) => ({
-        _id: s._id,
-        name: `${s.firstName || s.name || ''} ${s.lastName || ''}`.trim(),
-        email: s.email || (s.user && s.user.email) || '',
-        category: s.serviceType || (s.category) || '',
-        phoneno: s.phone || s.phoneno || s.phoneNumber || '',
-        subject: s.requestTitle || s.subject || s.serviceType || '',
-        message: s.description || s.message || '',
-        status: s.completionStatus === 'completed' ? 'read' : 'new',
-        readAt: null,
-        repliedAt: null,
-        reply: null,
-        createdAt: s.createdAt
-      }));
+      // DEBUG: log raw posts to help identify registrations saved as posts
+      console.debug('ServicesPage: fetched posts', posts?.length, posts);
 
       const mappedPosts = (posts || []).map((p: any) => ({
         _id: `post_${p._id}`,
@@ -90,9 +75,26 @@ const ServicesPage = () => {
         reply: null,
         createdAt: p.createdAt
       }));
+      // Filter out items that look like service requests created via the contact form
+      const srRegex = /\bservice\s*request\b/i;
+      const filteredPosts = mappedPosts.filter(p => {
+        const subj = String(p.subject || '');
+        const msg = String(p.message || '');
+        // exclude if subject or message contains 'service request'
+        if (srRegex.test(subj) || srRegex.test(msg)) return false;
+        // some posts may include metadata indicating they are registrations
+        if ((p as any).meta && (p as any).meta.source === 'registration') {
+          console.debug('ServicesPage: excluding post due to meta.source=registration', p._id, p);
+          return false;
+        }
+        if ((p as any).isRegistration) {
+          console.debug('ServicesPage: excluding post due to isRegistration flag', p._id, p);
+          return false;
+        }
+        return true;
+      });
 
-      const mapped = [...mappedRequests, ...mappedPosts];
-      setContacts(mapped);
+      setContacts(filteredPosts);
     } catch (error) {
       toast.error('Failed to fetch services');
       console.error('Error fetching service requests:', error);
@@ -358,26 +360,37 @@ const ServicesPage = () => {
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent align="end" className="w-44 p-1">
-                            <button
-                              className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-100 rounded text-left"
-                              onClick={() => openDetails(contact)}
-                            >
-                              <Eye className="h-4 w-4" /> View Details
-                            </button>
-                            {contact.status === 'new' && (
+                            {contact._id && String(contact._id).startsWith('post_') ? (
                               <button
                                 className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-100 rounded text-left"
-                                onClick={() => handleMarkAsRead(contact._id)}
+                                onClick={() => openDetails(contact)}
                               >
-                                <CheckCircle className="h-4 w-4" /> Mark as Read
+                                <Eye className="h-4 w-4" /> View Details
                               </button>
+                            ) : (
+                              <>
+                                <button
+                                  className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-100 rounded text-left"
+                                  onClick={() => openDetails(contact)}
+                                >
+                                  <Eye className="h-4 w-4" /> View Details
+                                </button>
+                                {contact.status === 'new' && (
+                                  <button
+                                    className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-100 rounded text-left"
+                                    onClick={() => handleMarkAsRead(contact._id)}
+                                  >
+                                    <CheckCircle className="h-4 w-4" /> Mark as Read
+                                  </button>
+                                )}
+                                <button
+                                  className="w-full flex items-center gap-2 px-3 py-2 hover:bg-red-100 text-red-600 rounded text-left"
+                                  onClick={() => { setContactToDelete(contact); setDeleteDialogOpen(true); }}
+                                >
+                                  <Trash2 className="h-4 w-4" /> Delete
+                                </button>
+                              </>
                             )}
-                            <button
-                              className="w-full flex items-center gap-2 px-3 py-2 hover:bg-red-100 text-red-600 rounded text-left"
-                              onClick={() => { setContactToDelete(contact); setDeleteDialogOpen(true); }}
-                            >
-                              <Trash2 className="h-4 w-4" /> Delete
-                            </button>
                           </PopoverContent>
                         </Popover>
                       </td>

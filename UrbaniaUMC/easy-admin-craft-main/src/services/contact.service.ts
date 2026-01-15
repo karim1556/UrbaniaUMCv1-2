@@ -60,10 +60,44 @@ export const contactService = {
 
     // Delete contact
     deleteContact: async (contactId: string): Promise<void> => {
+        // Try deleting from multiple endpoints to handle backend route differences.
+        const rawId = String(contactId).replace(/^(sr_|post_)/, '');
+        const candidates = contactId.startsWith('sr_')
+            ? [`/registrations/${rawId}`, `/contact/messages/${rawId}`, `/service-posts/${rawId}`]
+            : contactId.startsWith('post_')
+                ? [`/service-posts/${rawId}`, `/contact/messages/${rawId}`]
+                : [`/contact/messages/${rawId}`, `/registrations/service/${rawId}`, `/service-posts/${rawId}`];
+
+        let lastError: any = null;
+        for (const ep of candidates) {
+            try {
+                console.debug('deleteContact: attempting DELETE', ep);
+                await api.delete(ep);
+                console.debug('deleteContact: deleted via', ep);
+                return;
+            } catch (err: any) {
+                lastError = err;
+                // If 404, continue to next candidate; otherwise stop and rethrow
+                const status = err?.response?.status;
+                console.warn(`deleteContact: failed DELETE ${ep}`, status || err?.message || err);
+                if (status && status !== 404) {
+                    console.error('Error deleting contact:', err);
+                    throw err;
+                }
+                // otherwise try next candidate
+            }
+        }
+
+        console.error('Error deleting contact, all endpoints failed', lastError);
+        throw lastError || new Error('Failed to delete contact');
+    },
+
+    // Delete service registration (service requests endpoint)
+    deleteServiceRegistration: async (registrationId: string): Promise<void> => {
         try {
-            await api.delete(`/api/contact/messages/${contactId}`);
+            await api.delete(`/api/registrations/service/${registrationId}`);
         } catch (error) {
-            console.error('Error deleting contact:', error);
+            console.error('Error deleting service registration:', error);
             throw error;
         }
     },

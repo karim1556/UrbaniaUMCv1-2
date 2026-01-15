@@ -53,4 +53,18 @@ const getServicePostById = async (req, res) => {
   }
 };
 
-module.exports = { createServicePost, getServicePosts, getServicePostById };
+// Delete a service post (admin)
+const deleteServicePost = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const post = await ServicePost.findById(id);
+    if (!post) return res.status(404).json({ message: 'Post not found' });
+    await ServicePost.findByIdAndDelete(id);
+    res.json({ message: 'Service post deleted' });
+  } catch (error) {
+    console.error('Delete service post error:', error);
+    res.status(500).json({ message: 'Error deleting service post', error: error.message });
+  }
+};
+
+module.exports = { createServicePost, getServicePosts, getServicePostById, deleteServicePost };

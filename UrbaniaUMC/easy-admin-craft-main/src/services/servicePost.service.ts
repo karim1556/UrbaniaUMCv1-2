@@ -19,4 +19,13 @@ export const servicePostService = {
     const resp = await api.get('/api/service-posts');
     return resp.data;
   }
+  ,
+  deletePost: async (postId: string): Promise<void> => {
+    try {
+      await api.delete(`/api/service-posts/${postId}`);
+    } catch (error) {
+      console.error('Error deleting service post:', error);
+      throw error;
+    }
+  }
 };
