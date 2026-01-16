@@ -70,15 +70,41 @@ const EventForm: React.FC<EventFormProps> = ({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formState, setFormState] = useState<FormState>(() => {
         if (!event) return initialFormState;
+
+        // Initialize time-related fields from event.time if available
+        let startTime = '';
+        let endTime = '';
+        let timeRange = '';
+        if (event.time && typeof event.time === 'string') {
+            timeRange = event.time.replace(' to ', ' - ');
+            const m = event.time.match(/^(.*?)\s+to\s+(.*)$/);
+            const to24 = (t: string) => {
+                const mm = t.trim().match(/^(\d{1,2}):(\d{2})\s*(am|pm|AM|PM)?$/);
+                if (!mm) return '';
+                let h = parseInt(mm[1], 10);
+                const min = mm[2];
+                const ampm = mm[3];
+                if (ampm) {
+                    const a = ampm.toLowerCase();
+                    if (a === 'pm' && h < 12) h += 12;
+                    if (a === 'am' && h === 12) h = 0;
+                }
+                return `${h.toString().padStart(2, '0')}:${min}`;
+            };
+            if (m) {
+                startTime = to24(m[1]) || '';
+                endTime = to24(m[2]) || '';
+            }
+        }
+
         return {
             title: event.title || '',
             description: event.description || '',
             fullDescription: event.fullDescription || '',
             date: event.date ? event.date.slice(0, 10) : '',
-            // store the whole range as a user-friendly string like "9:00 AM - 11:00 AM"
-            timeRange: event.time && typeof event.time === 'string' ? event.time.replace(' to ', ' - ') : '',
-            startTime: '',
-            endTime: '',
+            timeRange,
+            startTime,
+            endTime,
             location: event.location || '',
             category: event.category || '',
             'pricing.type': event.pricing?.type || '',
@@ -113,6 +139,8 @@ const EventForm: React.FC<EventFormProps> = ({
         const fullDescription = formData.get('fullDescription') as string;
         const date = formData.get('date') as string;
         const timeRange = (formData.get('timeRange') as string) || '';
+        const startTime = (formData.get('startTime') as string) || '';
+        const endTime = (formData.get('endTime') as string) || '';
         const location = formData.get('location') as string;
         const category = formData.get('category') as string;
         const pricingType = formData.get('pricing.type') as string;
@@ -126,7 +154,7 @@ const EventForm: React.FC<EventFormProps> = ({
         if (!description?.trim()) errors.description = 'Description is required';
         if (!fullDescription?.trim()) errors.fullDescription = 'Full description is required';
         if (!date) errors.date = 'Date is required';
-        if (!event && !timeRange) errors.timeRange = 'Time range is required';
+        if (!event && !(startTime && endTime) && !timeRange) errors.timeRange = 'Time range is required';
         if (!location?.trim()) errors.location = 'Location is required';
         if (!category) errors.category = 'Category is required';
         if (!capacity) errors.capacity = 'Capacity is required';
@@ -138,7 +166,17 @@ const EventForm: React.FC<EventFormProps> = ({
         // Time validations
         // Accept ranges like "9:00 AM - 11:30 AM" or "09:00-11:30" or "09:00 - 11:30"
         const rangeMatch = timeRange.match(/^\s*(.+?)\s*-\s*(.+?)\s*$/);
-        if (timeRange) {
+        // Validate using startTime/endTime if present, otherwise parse timeRange
+        const time24Regex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+        if (startTime && endTime) {
+            if (!time24Regex.test(startTime) || !time24Regex.test(endTime)) {
+                errors.time = 'Invalid time(s). Use HH:MM format';
+            } else {
+                const start = new Date(`2000-01-01T${startTime}`);
+                const end = new Date(`2000-01-01T${endTime}`);
+                if (end <= start) errors.time = 'End time must be after start time';
+            }
+        } else if (timeRange) {
             if (!rangeMatch) {
                 errors.time = 'Invalid time range format. Use like "9:00 AM - 11:30 AM"';
             } else {
@@ -159,7 +197,6 @@ const EventForm: React.FC<EventFormProps> = ({
                 };
                 const s24 = to24(rawStart) || rawStart.trim();
                 const e24 = to24(rawEnd) || rawEnd.trim();
-                const time24Regex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
                 if (!time24Regex.test(s24) || !time24Regex.test(e24)) {
                     errors.time = 'Invalid time(s) in range. Use HH:MM or H:MM AM/PM';
                 } else {
@@ -201,29 +238,25 @@ const EventForm: React.FC<EventFormProps> = ({
         }
 
         // Combine start and end times
-        const timeRange = (formData.get('timeRange') as string) || '';
-        if (timeRange) {
-            const rangeMatch = timeRange.match(/^\s*(.+?)\s*-\s*(.+?)\s*$/);
+        const startTimeVal = (formData.get('startTime') as string) || '';
+        const endTimeVal = (formData.get('endTime') as string) || '';
+        // Prefer startTime/endTime inputs if provided, otherwise fallback to timeRange field
+        const selectedRange = startTimeVal && endTimeVal ? `${startTimeVal}-${endTimeVal}` : ((formData.get('timeRange') as string) || '');
+        if (selectedRange) {
+            // selectedRange may be "HH:MM-HH:MM" (24h) or a friendly string. Normalize.
+            const rangeMatch = selectedRange.match(/^\s*(.+?)\s*-\s*(.+?)\s*$/);
             if (rangeMatch) {
                 const [, rawStart, rawEnd] = rangeMatch;
-                const to24 = (t: string) => {
-                    const m = t.trim().match(/^(\d{1,2}):(\d{2})\s*(am|pm|AM|PM)?$/);
-                    if (!m) return null;
-                    let h = parseInt(m[1], 10);
-                    const min = m[2];
-                    const ampm = m[3];
-                    if (ampm) {
-                        const a = ampm.toLowerCase();
-                        if (a === 'pm' && h < 12) h += 12;
-                        if (a === 'am' && h === 12) h = 0;
-                    }
-                    return `${h.toString().padStart(2, '0')}:${min}`;
-                };
-                const s24 = to24(rawStart) || rawStart.trim();
-                const e24 = to24(rawEnd) || rawEnd.trim();
-                const formattedStartTime = new Date(`2000-01-01T${s24}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-                const formattedEndTime = new Date(`2000-01-01T${e24}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-                formData.set('time', `${formattedStartTime} to ${formattedEndTime}`);
+                const s24 = rawStart.trim();
+                const e24 = rawEnd.trim();
+                try {
+                    const formattedStartTime = new Date(`2000-01-01T${s24}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+                    const formattedEndTime = new Date(`2000-01-01T${e24}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+                    formData.set('time', `${formattedStartTime} to ${formattedEndTime}`);
+                } catch (err) {
+                    // if parsing fails, still set raw
+                    formData.set('time', `${rawStart.trim()} to ${rawEnd.trim()}`);
+                }
             }
         } else {
             formData.delete('time');
@@ -344,16 +377,31 @@ const EventForm: React.FC<EventFormProps> = ({
 
                         {/* Time Range */}
                         <div className="space-y-2">
-                            <Label htmlFor="timeRange">Time Range</Label>
-                            <Input
-                                id="timeRange"
-                                name="timeRange"
-                                placeholder="e.g. 9:00 AM - 11:30 AM or 09:00 - 11:30"
-                                required={!event}
-                                value={formState.timeRange}
-                                onChange={handleFieldChange}
-                            />
-                            <p className="text-sm text-muted-foreground">Enter a range like "9:00 AM - 11:30 AM" or "09:00 - 11:30"</p>
+                            <Label>Time Range</Label>
+                            <div className="flex gap-2 items-center">
+                                <div className="flex-1">
+                                    <Input
+                                        id="startTime"
+                                        name="startTime"
+                                        type="time"
+                                        required={!event}
+                                        value={formState.startTime}
+                                        onChange={handleFieldChange}
+                                    />
+                                </div>
+                                <div className="text-sm text-gray-500">to</div>
+                                <div className="flex-1">
+                                    <Input
+                                        id="endTime"
+                                        name="endTime"
+                                        type="time"
+                                        required={!event}
+                                        value={formState.endTime}
+                                        onChange={handleFieldChange}
+                                    />
+                                </div>
+                            </div>
+                            <p className="text-sm text-muted-foreground">Use the time pickers to select start and end times.</p>
                             {errors.time && <p className="text-sm text-red-500">{errors.time}</p>}
                             {errors.timeRange && <p className="text-sm text-red-500">{errors.timeRange}</p>}
                         </div>
