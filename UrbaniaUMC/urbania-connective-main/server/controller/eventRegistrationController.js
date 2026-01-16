@@ -72,8 +72,8 @@ const createEventRegistration = async (req, res) => {
             };
         }
 
-        // Calculate totalAttendees from guests array
-        const totalAttendees = guests ? guests.length : 0;
+        // Calculate totalAttendees: include the primary registrant + guests
+        const totalAttendees = 1 + (Array.isArray(guests) ? guests.length : 0);
 
         // Fetch user's customId if logged in
         let userCustomId = null;
@@ -136,9 +136,52 @@ const createEventRegistration = async (req, res) => {
             userId: registrationData.user || 'guest'
         });
 
+        // Check capacity: count existing attendees (exclude cancelled/rejected)
+        const agg = await EventRegistration.aggregate([
+            { $match: { event: new mongoose.Types.ObjectId(eventId), status: { $nin: ['cancelled', 'rejected'] } } },
+            { $group: { _id: null, total: { $sum: '$totalAttendees' } } }
+        ]);
+        const existingAttendees = agg && agg.length > 0 ? agg[0].total : 0;
+        // Debug logging to help diagnose capacity calculation issues
+        console.log('Event registration capacity check values:', {
+            eventId,
+            existingAttendees,
+            totalAttendees,
+            // raw event registration object and capacity fields
+            eventRegistrationCapacity: event && event.registration ? event.registration.capacity : undefined,
+            eventCapacity: event && event.capacity !== undefined ? event.capacity : undefined
+        });
+        // Normalize capacity value
+        let capacity = 0;
+        try {
+            if (event && event.registration && event.registration.capacity !== undefined) {
+                capacity = Number(event.registration.capacity) || 0;
+            } else if (event && event.capacity !== undefined) {
+                capacity = Number(event.capacity) || 0;
+            }
+        } catch (e) {
+            capacity = 0;
+        }
+        if (capacity > 0 && (existingAttendees + totalAttendees) > capacity) {
+            const spotsLeft = Math.max(0, capacity - existingAttendees);
+            return res.status(400).json({ message: `Not enough spots available. Only ${spotsLeft} spot(s) left.` });
+        }
+
         // Create registration
         const registration = new EventRegistration(registrationData);
         await registration.save();
+
+        // Update event attendee counters
+        try {
+            // increment numeric attendees
+            await Event.findByIdAndUpdate(eventId, { $inc: { attendees: totalAttendees } });
+            // add user to registeredParticipants if logged in
+            if (req.user && req.user._id) {
+                await Event.findByIdAndUpdate(eventId, { $addToSet: { registeredParticipants: req.user._id } });
+            }
+        } catch (err) {
+            console.error('Failed to update event attendee counters:', err);
+        }
 
         // Add event to user's events array if user is logged in
         if (req.user && req.user._id) {
@@ -176,8 +219,13 @@ const createEventRegistration = async (req, res) => {
             }
         });
     } catch (error) {
-        console.error('Create event registration error:', error);
-        res.status(500).json({ message: 'Error creating event registration', error: error.message });
+        console.error('Create event registration error:', error && error.stack ? error.stack : error);
+        const msg = error && error.message ? error.message : 'Error creating event registration';
+        // In development include stack for easier debugging
+        if (process.env.NODE_ENV !== 'production') {
+            return res.status(500).json({ message: msg, stack: error.stack });
+        }
+        return res.status(500).json({ message: msg });
     }
 };
 
@@ -296,6 +344,16 @@ const updateEventRegistration = async (req, res) => {
 
             // If cancelled, update main status
             if (cancellationStatus === 'cancelled' || cancellationStatus === 'refunded') {
+                // Update event attendees counters when a registration is cancelled
+                try {
+                    const regTotal = registration.totalAttendees || 1;
+                    await Event.findByIdAndUpdate(registration.event, { $inc: { attendees: -regTotal } });
+                    if (registration.user) {
+                        await Event.findByIdAndUpdate(registration.event, { $pull: { registeredParticipants: registration.user } });
+                    }
+                } catch (err) {
+                    console.error('Failed to adjust event counters on cancellation:', err);
+                }
                 registration.status = 'cancelled';
                 registration.statusHistory.push({
                     status: 'cancelled',
@@ -384,7 +442,7 @@ const getEventStats = async (req, res) => {
         // Build match filter
         const matchFilter = { registrationType: 'event' };
         if (eventId && validateObjectId(eventId)) {
-            matchFilter.event = mongoose.Types.ObjectId(eventId);
+            matchFilter.event = new mongoose.Types.ObjectId(eventId);
         }
 
         // Total registrations by event

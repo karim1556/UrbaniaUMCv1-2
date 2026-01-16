@@ -57,6 +57,11 @@ const UserDetailsDialog: React.FC<UserDetailsDialogProps> = ({ user, isOpen, onC
 
     const statusInfo = getStatusInfo(user.status);
 
+    const formatSafe = (dateStr?: string, fmt = 'PPpp') => {
+        const d = dateStr ? new Date(dateStr) : null;
+        return d && !isNaN(d.getTime()) ? format(d, fmt) : 'Unknown';
+    };
+
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="max-w-4xl w-full p-6 overflow-y-auto" style={{ maxHeight: '90vh' }}>
@@ -100,8 +105,8 @@ const UserDetailsDialog: React.FC<UserDetailsDialogProps> = ({ user, isOpen, onC
                         </div>
                     </div>
 
-                    <DetailItem icon={<Calendar />} label="Created At" value={format(new Date(user.createdAt), 'PPpp')} />
-                    <DetailItem icon={<Clock />} label="Last Updated" value={format(new Date(user.updatedAt), 'PPpp')} />
+                    <DetailItem icon={<Calendar />} label="Created At" value={formatSafe(user.createdAt, 'PPpp')} />
+                    <DetailItem icon={<Clock />} label="Last Updated" value={formatSafe(user.updatedAt, 'PPpp')} />
 
                     <DetailItem icon={<UserRound />} label="Middle Name" value={user.middleName} />
                     <DetailItem icon={<UserCog />} label="Occupation & Profile" value={user.occupationProfile} />

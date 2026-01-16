@@ -256,18 +256,18 @@ const EventDetail = () => {
                         <p className="text-muted-foreground">{event.pricing.details}</p>
                       </div>
                       {event.pricing.type === "paid" && (
-                        isPastEvent ? (
-                          <Button className="w-full" disabled>
-                            Registration Closed
-                          </Button>
-                        ) : (
-                          <Link to={`/events/${event._id}/eventregistrationform`} style={{ width: '100%' }}>
-                            <Button className="w-full">
-                              Register Now
-                            </Button>
-                          </Link>
-                        )
-                      )}
+                              isPastEvent ? (
+                                <Button className="w-full" disabled>
+                                  Registration Closed
+                                </Button>
+                              ) : (
+                                <Link to={`/events/${event._id}/eventregistrationform`} style={{ width: '100%' }}>
+                                  <Button className="w-full" disabled={(event.registration.capacity - (event.attendees || 0)) <= 0}>
+                                    {(event.registration.capacity - (event.attendees || 0)) <= 0 ? 'Event Full' : 'Register Now'}
+                                  </Button>
+                                </Link>
+                              )
+                            )}
                     </div>
                     {event.registration.required && (
                       <Alert>
@@ -277,7 +277,7 @@ const EventDetail = () => {
                         </AlertTitle>
                         <AlertDescription>
                           <p>Please register before {event.registration.deadline}</p>
-                          <p className="mt-2">Available Spots: {event.registration.capacity}</p>
+                          <p className="mt-2">Available Spots: {Math.max(0, event.registration.capacity - (event.attendees || 0))} / {event.registration.capacity}</p>
                         </AlertDescription>
                       </Alert>
                     )}
@@ -326,8 +326,8 @@ const EventDetail = () => {
                     </Button>
                   ) : (
                     <Link to={`/events/${event._id}/eventregistrationform`} style={{ width: '100%' }}>
-                      <Button className="w-full">
-                        Register for Event
+                      <Button className="w-full" disabled={(event.registration.capacity - (event.attendees || 0)) <= 0}>
+                        {(event.registration.capacity - (event.attendees || 0)) <= 0 ? 'Event Full' : 'Register for Event'}
                       </Button>
                     </Link>
                   )

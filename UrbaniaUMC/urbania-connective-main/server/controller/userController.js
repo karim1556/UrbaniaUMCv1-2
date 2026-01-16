@@ -447,11 +447,34 @@ const deleteUser = async (req, res) => {
             return res.status(403).json({ message: 'Access denied. Admin only.' });
         }
         const userId = req.params.id;
-        const deleted = await User.findByIdAndDelete(userId);
-        if (!deleted) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-        res.status(200).json({ message: 'User deleted successfully' });
+            const deleted = await User.findByIdAndDelete(userId);
+            if (!deleted) {
+                return res.status(404).json({ message: 'User not found' });
+            }
+
+            try {
+                // Remove any references to this user's email from other users' familyMembers arrays
+                const deletedEmail = (deleted.email || '').toLowerCase();
+                if (deletedEmail) {
+                    await User.updateMany(
+                        { 'familyMembers.email': { $regex: `^${deletedEmail}$`, $options: 'i' } },
+                        { $pull: { familyMembers: { email: { $regex: `^${deletedEmail}$`, $options: 'i' } } } }
+                    );
+                }
+
+                // Unset familyOf for any users who pointed to this user as owner
+                await User.updateMany({ familyOf: deleted._id }, { $unset: { familyOf: '' } });
+
+                // Delete placeholder family accounts that were generated for this user's customId
+                const customId = deleted.customId;
+                if (customId) {
+                    await User.deleteMany({ mobile: { $regex: `^fm_${customId}`, $options: 'i' } });
+                }
+            } catch (cleanupErr) {
+                console.error('Error during post-delete cleanup:', cleanupErr);
+            }
+
+            res.status(200).json({ message: 'User deleted successfully' });
     } catch (error) {
         console.error('Error deleting user:', error);
         res.status(500).json({ message: 'Failed to delete user', error: error.message });

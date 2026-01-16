@@ -180,10 +180,23 @@ const UserManagementCard = () => {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem asChild>
-                          <Link to={`/admin/users/${user._id}`}>View Details</Link>
+                          <Link to={`/admin/users/${user._id}`} onClick={(e) => e.stopPropagation()}>View Details</Link>
                         </DropdownMenuItem>
-                        <DropdownMenuItem>Edit User</DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600">Delete User</DropdownMenuItem>
+                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); /* TODO: navigate to edit */ }}>Edit User</DropdownMenuItem>
+                        <DropdownMenuItem className="text-red-600" onClick={async (e) => {
+                          e.stopPropagation();
+                          const ok = window.confirm(`Delete user ${user.firstName} ${user.lastName}? This action cannot be undone.`);
+                          if (!ok) return;
+                          try {
+                            await userService.deleteUser(user._id);
+                            // simple reload of recentUsers query by invalidating cache
+                            // Since this component uses useQuery with key ['recentUsers'], we can force refetch by reloading window or using queryClient.
+                            window.location.reload();
+                          } catch (err) {
+                            console.error('Failed to delete user', err);
+                            alert('Failed to delete user');
+                          }
+                        }}>Delete User</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </td>
@@ -217,7 +230,11 @@ const UserManagementCard = () => {
                     <Calendar className="h-5 w-5 mr-3 text-primary" />
                     <span className="text-sm font-medium">Join Date</span>
                   </div>
-                  <span className="font-semibold">{format(new Date(selectedUser.createdAt), 'MMM d, yyyy')}</span>
+                  {(() => {
+                    const created = selectedUser.createdAt ? new Date(selectedUser.createdAt) : null;
+                    const label = created && !isNaN(created.getTime()) ? format(created, 'MMM d, yyyy') : 'Unknown';
+                    return <span className="font-semibold">{label}</span>;
+                  })()}
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
                   <div className="flex items-center">
