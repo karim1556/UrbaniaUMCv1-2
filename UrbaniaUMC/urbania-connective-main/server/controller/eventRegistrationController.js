@@ -192,23 +192,7 @@ const createEventRegistration = async (req, res) => {
             );
         }
 
-        // --- Send Registration Email ---
-        try {
-            await sendMailEventRegistration(
-                registration.email,
-                { username: `${registration.firstName} ${registration.lastName}` },
-                event,
-                registration
-            );
-            console.log(`Registration email sent successfully to ${registration.email}`);
-        } catch (emailError) {
-            console.error(`Failed to send registration email for registration ${registration._id}:`, emailError);
-            // Do not block the API response if email fails. Log it for monitoring.
-        }
-        // --- End Send Registration Email ---
-
-
-        // Return success with registration data
+        // Return success with registration data FIRST (don't wait for email)
         res.status(201).json({
             message: 'Event registration created successfully',
             registration: {
@@ -218,6 +202,22 @@ const createEventRegistration = async (req, res) => {
                 totalAmount: registration.totalAmount
             }
         });
+
+        // --- Send Registration Email (asynchronously, non-blocking) ---
+        setImmediate(async () => {
+            try {
+                await sendMailEventRegistration(
+                    registration.email,
+                    { username: `${registration.firstName} ${registration.lastName}` },
+                    event,
+                    registration
+                );
+                console.log(`Registration email sent successfully to ${registration.email}`);
+            } catch (emailError) {
+                console.error(`Failed to send registration email for registration ${registration._id}:`, emailError);
+            }
+        });
+        // --- End Send Registration Email ---
     } catch (error) {
         console.error('Create event registration error:', error && error.stack ? error.stack : error);
         const msg = error && error.message ? error.message : 'Error creating event registration';
