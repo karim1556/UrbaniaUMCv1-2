@@ -1,10 +1,17 @@
 import axios from 'axios';
 
-// Log configuration for debugging
-const rawBase = import.meta.env.VITE_API_URL || 'http://localhost:4000';
-// Ensure base ends with /api (normalize incoming values)
-const apiBaseUrl = rawBase.endsWith('/api') ? rawBase.replace(/\/+$/, '') : rawBase.replace(/\/+$/, '') + '/api';
-console.log('API base URL:', apiBaseUrl);
+// Determine base URL for API requests. Prefer VITE_API_URL, fall back
+// to window.location.origin (so deployed builds without the env var still
+// talk to the same host), and finally localhost for dev safety.
+const envBase = typeof import.meta !== 'undefined' && import.meta.env && (import.meta.env.VITE_API_URL as string | undefined)
+  ? String(import.meta.env.VITE_API_URL)
+  : undefined;
+const fallbackOrigin = (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : 'http://localhost:4000';
+const rawBase = (envBase && envBase.trim() !== '') ? envBase : fallbackOrigin;
+// Normalize and ensure trailing '/api'
+const normalized = String(rawBase).replace(/\/+$/, '');
+const apiBaseUrl = normalized.endsWith('/api') ? normalized : normalized + '/api';
+console.log('API base URL (resolved):', apiBaseUrl, '(source:', envBase ? 'VITE_API_URL' : 'window.location.origin/fallback', ')');
 
 // Create Axios instance with appropriate configuration
 const api = axios.create({
@@ -13,7 +20,7 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
   withCredentials: true,
-  timeout: 15000,
+  timeout: 30000,
 });
 
 // Request interceptor
