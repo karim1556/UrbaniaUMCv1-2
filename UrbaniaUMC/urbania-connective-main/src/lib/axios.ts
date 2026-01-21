@@ -20,7 +20,9 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
   withCredentials: true,
-  timeout: 30000,
+  // Remove client-side timeout so we don't abort requests while the server
+  // is processing. Server-side timeouts should be enforced by the API.
+  timeout: 0,
 });
 
 // Request interceptor
