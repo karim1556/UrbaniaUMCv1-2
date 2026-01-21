@@ -22,15 +22,15 @@ const Donate = () => {
                 </p>
                 <div className="flex flex-wrap gap-4 mb-6">
                   <div className="bg-white/10 backdrop-blur-sm rounded-lg px-5 py-4 text-center">
-                    <p className="text-lg font-medium">$50</p>
+                    <p className="text-lg font-medium">₹50</p>
                     <p className="text-xs text-primary-foreground/70">Monthly Food Support</p>
                   </div>
                   <div className="bg-white/10 backdrop-blur-sm rounded-lg px-5 py-4 text-center">
-                    <p className="text-lg font-medium">$100</p>
+                    <p className="text-lg font-medium">₹100</p>
                     <p className="text-xs text-primary-foreground/70">Education Materials</p>
                   </div>
                   <div className="bg-white/10 backdrop-blur-sm rounded-lg px-5 py-4 text-center">
-                    <p className="text-lg font-medium">$250</p>
+                    <p className="text-lg font-medium">₹250</p>
                     <p className="text-xs text-primary-foreground/70">Medical Assistance</p>
                   </div>
                   <div className="bg-white/10 backdrop-blur-sm rounded-lg px-5 py-4 text-center">
