@@ -26,10 +26,22 @@ const api = axios.create({
 // Request interceptor
 api.interceptors.request.use(
   (config) => {
+    // Ensure baseURL is always set on the config (defensive for mixed imports)
+    if (!config.baseURL) config.baseURL = apiBaseUrl;
     // Normalize baseURL and avoid double '/api' in final URL
     if (config.baseURL) config.baseURL = String(config.baseURL).replace(/\/+$/, '');
     if (config.url && config.baseURL && String(config.baseURL).endsWith('/api') && String(config.url).startsWith('/api')) {
       config.url = String(config.url).replace(/^\/api/, '');
+    }
+
+    // Compute absolute URL for logging/debugging
+    try {
+      const base = String(config.baseURL || apiBaseUrl).replace(/\/+$/, '') + '/';
+      const path = String(config.url || '').replace(/^\/+/, '');
+      // eslint-disable-next-line no-param-reassign
+      (config as any).__fullRequestUrl = base + path;
+    } catch (e) {
+      // ignore
     }
     const token = localStorage.getItem('token');
     if (token) {
@@ -50,9 +62,10 @@ api.interceptors.request.use(
       console.log('📝 Registration data:', JSON.stringify(config.data, null, 2));
     }
     
-    // Log the request details
-    console.log(`API Request: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`, {
+    // Log the request details with computed absolute URL
+    console.log(`API Request: ${config.method?.toUpperCase()} ${(config as any).__fullRequestUrl || (config.baseURL + config.url)}`, {
       url: config.url,
+      fullUrl: (config as any).__fullRequestUrl,
       headers: config.headers,
       data: config.data ? 'DATA_PRESENT' : 'NO_DATA', // Don't log full data for privacy
       params: config.params
@@ -124,8 +137,26 @@ api.interceptors.response.use(
       console.error('API No Response Error:', {
         request: error.request,
         url: error.config?.url,
+        fullUrl: (error.config as any)?.__fullRequestUrl,
         method: error.config?.method
       });
+      // Attempt a lightweight fetch fallback for diagnostics (do not replace production flow)
+      (async () => {
+        try {
+          const cfg = error.config || {};
+          const fullUrl = (cfg as any).__fullRequestUrl || (String(cfg.baseURL || apiBaseUrl).replace(/\/+$/, '') + '/' + String(cfg.url || '').replace(/^\/+/, ''));
+          const fetchRes = await fetch(fullUrl, {
+            method: (cfg.method || 'get').toUpperCase(),
+            headers: cfg.headers || { 'Content-Type': 'application/json' },
+            body: cfg.data ? JSON.stringify(cfg.data) : undefined,
+            credentials: cfg.withCredentials ? 'include' : 'same-origin'
+          });
+          console.warn('Fetch fallback status:', fetchRes.status, 'for', fullUrl);
+        } catch (fe) {
+          console.warn('Fetch fallback failed:', fe);
+        }
+      })();
+
       error.userMessage = 'No response from server. Please check your internet connection.';
     } else {
       // Something happened in setting up the request that triggered an Error
