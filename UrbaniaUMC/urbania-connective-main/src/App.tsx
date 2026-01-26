@@ -16,6 +16,8 @@ import Education from "./pages/Education";
 import EducationalProgram from "./pages/EducationalProgram";
 import About from "./pages/About";
 import Volunteering from "./pages/Volunteering";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
 import Registration from "./pages/Registration";
 import Donate from "./pages/Donate";
 import Dashboard from "./pages/Dashboard";
@@ -65,6 +67,8 @@ const App = () => {
             <Route path="/education/:id" element={<EducationalProgram />} />
             <Route path="/education/register/:courseId" element={<CourseRegistration />} />
             <Route path="/about" element={<About />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/terms" element={<Terms />} />
             <Route path="/volunteering" element={<Volunteering />} />
             <Route path="/donation-success" element={<DonationSuccess />} />
 

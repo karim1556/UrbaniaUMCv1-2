@@ -47,6 +47,9 @@ const corsOptions = {
       'http://127.0.0.1:5173'
     ];
 
+    // Allow the deployed frontend on Vercel
+    allowedOrigins.push('https://urbania-um-cv1-2.vercel.app');
+
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
@@ -90,6 +93,11 @@ app.use('/api/groq', groqChatRoutes);
 // Basic route
 app.get('/', (req, res) => {
   res.json({ message: 'Welcome to the API' });
+});
+
+// Health check for uptime/diagnostics
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
 // Error handling middleware

@@ -266,9 +266,24 @@ const CourseRegistration = () => {
         toast.success("Registration submitted! We will contact you soon.");
         navigate("/education");
       } else {
-        const data = await response.json();
-        // Show server-provided message when available
-        toast.error(data?.message || "Submission failed. Please try again later.");
+        // Safely handle empty or non-JSON responses to avoid JSON parse errors
+        const contentType = response.headers.get("content-type") || "";
+        let serverMessage: string | undefined;
+        try {
+          if (contentType.includes("application/json")) {
+            const data = await response.json();
+            serverMessage = data?.message;
+          } else {
+            const text = await response.text();
+            serverMessage = text || response.statusText;
+          }
+        } catch (parseErr) {
+          console.warn("Failed to parse error response:", parseErr);
+          serverMessage = response.statusText;
+        }
+
+        console.error(`Registration failed: ${response.status} ${response.statusText}`, serverMessage);
+        toast.error(serverMessage || "Submission failed. Please try again later.");
       }
     } catch (err) {
       console.error("Registration submit error:", err);
