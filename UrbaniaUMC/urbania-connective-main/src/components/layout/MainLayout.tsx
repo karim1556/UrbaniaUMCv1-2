@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { Toaster } from "sonner";
+import { Toaster, toast } from "sonner";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 
@@ -35,6 +35,42 @@ const MainLayout = ({ children }: MainLayoutProps) => {
       document.querySelectorAll(".section-fade-in").forEach((section) => {
         observer.unobserve(section);
       });
+      // cleanup submit watchdog
+      document.removeEventListener('submit', submitHandler, true);
+    };
+  }, []);
+
+  // Submit watchdog: if a form submit disables a button and it remains disabled
+  // for too long (e.g., network hiccup or navigation race), re-enable it and
+  // notify the user so the UI doesn't appear permanently stuck.
+  useEffect(() => {
+    let timers: Array<number> = [];
+
+    function submitHandler(e: Event) {
+      // schedule a check in 10 seconds
+      const t = window.setTimeout(() => {
+        try {
+          const disabledButtons = Array.from(document.querySelectorAll<HTMLButtonElement>('button:disabled'));
+          const stuckButtons = disabledButtons.filter(btn => /submitting|creating|processing|deleting|saving/i.test(btn.innerText));
+          if (stuckButtons.length > 0) {
+            stuckButtons.forEach(btn => {
+              btn.disabled = false;
+            });
+            console.warn('Submit watchdog re-enabled', stuckButtons.length, 'button(s)');
+            toast.error('Action may have completed — buttons re-enabled. Check your dashboard or refresh.');
+          }
+        } catch (err) {
+          // ignore
+        }
+      }, 10000);
+      timers.push(t);
+    }
+
+    document.addEventListener('submit', submitHandler, true);
+
+    return () => {
+      document.removeEventListener('submit', submitHandler, true);
+      timers.forEach(t => clearTimeout(t));
     };
   }, []);
 

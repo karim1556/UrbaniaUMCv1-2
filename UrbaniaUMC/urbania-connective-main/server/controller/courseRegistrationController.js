@@ -13,6 +13,7 @@ const createCourseRegistration = async (req, res) => {
       userId, name, email, phone, age, gender, address, level, experience, preferredSchedule, specialRequests, courseId, courseTitle
     });
     await registration.save();
+    console.log('Course registration saved:', { id: registration._id, email, name, courseId, courseTitle });
 
     try {
       await sendMailEducationRegistration(email, name, courseTitle);
@@ -22,6 +23,8 @@ const createCourseRegistration = async (req, res) => {
       // Do not block the response if email fails
     }
 
+    // Log before sending response
+    console.log('Sending registration response for:', registration._id);
     res.status(201).json({ message: 'Registration successful.' });
   } catch (err) {
     res.status(500).json({ message: 'Server error.', error: err.message });

@@ -260,25 +260,32 @@ const CourseRegistration = () => {
         courseTitle: course.title,
       };
 
+      console.log('Submitting registration payload...', payload);
       const res = await api.post('/course-registration', payload);
+      console.log('Registration response received:', res && res.status, res && res.data);
       if (res && (res.status === 200 || res.status === 201)) {
+        // make sure submitting state is cleared before navigation
+        setSubmitting(false);
         toast.success("Registration submitted! We will contact you soon.");
         navigate("/education");
+        return;
       } else {
         console.error('Registration failed:', res.status, res.statusText, res.data);
+        setSubmitting(false);
         toast.error((res.data && res.data.message) || 'Submission failed. Please try again later.');
+        return;
       }
     } catch (err) {
       console.error("Registration submit error:", err);
       // axios errors may include a response
       if ((err as any)?.response) {
         const r = (err as any).response;
+        setSubmitting(false);
         toast.error(r.data?.message || `Server error (${r.status}). Please try again later.`);
       } else {
+        setSubmitting(false);
         toast.error("Network/server error. Please try again later.");
       }
-    } finally {
-      setSubmitting(false);
     }
   };
 
