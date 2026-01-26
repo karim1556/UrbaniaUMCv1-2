@@ -95,7 +95,7 @@ const Hero = () => {
             Serving Our Community
           </div>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-semibold leading-tight mb-6 animate-fade-in text-shadow">
-            Building a <span className="text-emerald-300">Stronger</span> Community Together
+            Building a <span className="text-emerald-300">Stronger</span> Communities Together
           </h1>
           <p className="text-lg md:text-xl text-sand-200 mb-8 max-w-2xl mx-auto animate-fade-in [animation-delay:200ms] text-shadow-sm">
             The Urbania Welfare Community Centre is committed to supporting and uplifting our community through essential services, education, and volunteering opportunities.
