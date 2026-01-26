@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Calendar, Clock, MapPin, ArrowRight, Users, Share2, Calendar as CalendarIcon, ArrowLeft, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -169,7 +170,7 @@ const EventDetail = () => {
                     {event.category.charAt(0).toUpperCase() + event.category.slice(1)}
                   </Badge>
                   <Badge variant={event.pricing.type === "free" ? "secondary" : "default"}>
-                    {event.pricing.type === "free" ? "Free Event" : `Paid Event - ₹${event.pricing.amount}`}
+                    {event.pricing.type === "free" ? "Free Event" : `Paid Event - ${formatCurrency(event.pricing.amount)}`}
                   </Badge>
                   {event.featured && (
                     <Badge variant="secondary">Featured Event</Badge>
@@ -251,7 +252,7 @@ const EventDetail = () => {
                     <div className="flex items-center justify-between mb-4">
                       <div>
                         <p className="font-medium text-lg">
-                          {event.pricing.type === "free" ? "Free Event" : `₹${event.pricing.amount}`}
+                          {event.pricing.type === "free" ? "Free Event" : formatCurrency(event.pricing.amount)}
                         </p>
                         <p className="text-muted-foreground">{event.pricing.details}</p>
                       </div>
@@ -310,10 +311,10 @@ const EventDetail = () => {
                   </div>
                   <div>
                     <h3 className="font-medium mb-2">Cost</h3>
-                    <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-muted-foreground">
                       {event.pricing.type === "free"
                         ? "This is a free event"
-                        : `₹${event.pricing.amount} - ${event.pricing.details}`}
+                        : `${formatCurrency(event.pricing.amount)} - ${event.pricing.details}`}
                     </p>
                   </div>
                 </div>

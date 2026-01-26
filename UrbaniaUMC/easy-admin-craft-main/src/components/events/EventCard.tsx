@@ -68,8 +68,18 @@ const EventCard: React.FC<EventCardProps> = ({ event, attendeeCount = 0, onDelet
                         <div>
                             <span className="font-medium">Price:</span>
                             <p className="text-muted-foreground">
-                                {event.pricing.type === 'free' ? 'Free' : `₹${Math.round(Number(event.pricing.amount))}`}
+                                {event.pricing.type === 'free'
+                                    ? 'Free'
+                                    : `₹${formatRupee(event.pricing.amount)}`}
                             </p>
+                        // Format rupee value: no decimals for integers, keep decimals if present
+                        function formatRupee(amount: string | number): string {
+                            const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+                            // If integer, no decimals; else, max 2 decimals
+                            return num % 1 === 0
+                                ? num.toLocaleString('en-IN', { maximumFractionDigits: 0 })
+                                : num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                        }
                         </div>
                         <div>
                             <span className="font-medium">Capacity:</span>

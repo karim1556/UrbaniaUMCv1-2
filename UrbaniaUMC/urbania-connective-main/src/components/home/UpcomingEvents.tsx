@@ -22,9 +22,11 @@ const EventCard = ({ event }: EventCardProps) => {
           className="w-full h-full object-cover"
         />
         <div className="absolute top-4 right-4 flex gap-2">
-          <Badge variant={event.pricing.type === "free" ? "secondary" : "default"}>
-            {event.pricing.type === "free" ? "Free" : `$${event.pricing.amount}`}
-          </Badge>
+            <Badge variant={event.pricing.type === "free" ? "secondary" : "default"}>
+              {event.pricing.type === "free"
+                ? "Free"
+                : `₹${parseFloat(event.pricing.amount).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`}
+            </Badge>
           {event.featured && (
             <Badge variant="secondary">Featured</Badge>
           )}

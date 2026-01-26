@@ -7,6 +7,7 @@ import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
 import { eventService, Event } from "@/services/eventService";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Loader2 } from "lucide-react";
@@ -40,7 +41,7 @@ const EventCard = ({ event }: EventCardProps) => {
           )}>
             {event.pricing.type === "free"
               ? "Free"
-              : `₹${event.pricing.amount}`}
+              : formatCurrency(event.pricing.amount)}
           </span>
         </div>
         <h3 className="text-xl font-medium mb-2">{event.title}</h3>

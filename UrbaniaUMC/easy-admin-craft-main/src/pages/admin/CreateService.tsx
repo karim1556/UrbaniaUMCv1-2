@@ -41,7 +41,7 @@ const CreateServicePage = () => {
       { name: 'doctorName', label: 'Doctor / Clinic Contact' },
       { name: 'clinicHours', label: 'Clinic Hours', placeholder: 'e.g. Mon-Fri 9-5' },
       { name: 'servicesOffered', label: 'Services Offered', placeholder: 'e.g. Consultations, Screenings' },
-      { name: 'cost', label: 'Cost / Free Notes', placeholder: 'e.g. Free or $10 per visit' }
+      { name: 'cost', label: 'Cost / Free Notes', placeholder: 'e.g. Free or ₹10 per visit' }
     ],
     financial: [
       { name: 'assistanceType', label: 'Assistance Type', placeholder: 'Emergency, Rent, Bills' },

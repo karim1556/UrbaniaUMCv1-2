@@ -43,25 +43,68 @@ export const eventService = {
     getAllEvents: async (): Promise<Event[]> => {
             const response = await api.get<EventsResponse>('/events');
             console.log('API Response:', response.data);
-            return response.data.events;
+            // Normalize pricing.amount to a number and strip any currency symbols
+            const events = response.data.events || [];
+            return events.map(ev => {
+                try {
+                    const amt = (ev.pricing && (ev.pricing as any).amount);
+                    if (typeof amt === 'string') {
+                        const cleaned = amt.replace(/[^0-9.\-]/g, '');
+                        (ev.pricing as any).amount = cleaned === '' ? 0 : parseFloat(cleaned);
+                    }
+                } catch (err) {
+                    // ignore
+                }
+                return ev;
+            });
     },
 
     // Get featured events
     getFeaturedEvents: async (): Promise<Event[]> => {
         const response = await api.get('/events/featured');
-        return response.data;
+        const events = response.data || [];
+        return events.map(ev => {
+            try {
+                const amt = (ev.pricing && (ev.pricing as any).amount);
+                if (typeof amt === 'string') {
+                    const cleaned = amt.replace(/[^0-9.\-]/g, '');
+                    (ev.pricing as any).amount = cleaned === '' ? 0 : parseFloat(cleaned);
+                }
+            } catch (err) {}
+            return ev;
+        });
     },
 
     // Get upcoming events
     getUpcomingEvents: async (): Promise<Event[]> => {
         const response = await api.get('/events/upcoming');
-        return response.data;
+        const events = response.data || [];
+        return events.map(ev => {
+            try {
+                const amt = (ev.pricing && (ev.pricing as any).amount);
+                if (typeof amt === 'string') {
+                    const cleaned = amt.replace(/[^0-9.\-]/g, '');
+                    (ev.pricing as any).amount = cleaned === '' ? 0 : parseFloat(cleaned);
+                }
+            } catch (err) {}
+            return ev;
+        });
     },
 
     // Get events by category
     getEventsByCategory: async (category: string): Promise<Event[]> => {
         const response = await api.get(`/events/category/${category}`);
-        return response.data;
+        const events = response.data || [];
+        return events.map(ev => {
+            try {
+                const amt = (ev.pricing && (ev.pricing as any).amount);
+                if (typeof amt === 'string') {
+                    const cleaned = amt.replace(/[^0-9.\-]/g, '');
+                    (ev.pricing as any).amount = cleaned === '' ? 0 : parseFloat(cleaned);
+                }
+            } catch (err) {}
+            return ev;
+        });
     },
 
     // Get single event by ID
