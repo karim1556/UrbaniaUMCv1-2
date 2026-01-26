@@ -1109,7 +1109,7 @@ const Dashboard = () => {
                         alignItems: 'center',
                         gap: 16,
                       }}>
-                        <img src="/urbania-logo.png" alt="Urbania Momin Community Logo" style={{ height: 44, width: 44, borderRadius: '50%' }} />
+                        <img src="/urbania-logo.png" alt="Urbania Connect Community Logo" style={{ height: 44, width: 44, borderRadius: '50%' }} />
                         <div>
                           <div style={{ fontSize: 22, fontWeight: 800, color: '#157347', fontFamily: 'Georgia, serif' }}>
                             Urbania <span style={{ color: '#222' }}>Momin Community</span>
@@ -1160,7 +1160,7 @@ const Dashboard = () => {
                           Thank you for making a difference!
                         </div>
                         <div style={{ color: '#444', fontSize: 12, marginBottom: 2 }}>
-                          Urbania Momin Community | www.urbania.org | info@urbania.org
+                          Urbania Connect Community | www.urbania.org | info@urbania.org
                         </div>
                         <div style={{ color: '#444', fontSize: 12 }}>
                           123 Main Street, Mumbai, Maharashtra, India

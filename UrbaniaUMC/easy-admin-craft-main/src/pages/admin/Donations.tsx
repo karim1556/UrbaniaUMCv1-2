@@ -322,7 +322,7 @@ const Donations = () => {
           }}>
             <img
               src="/urbania-logo.png"
-              alt="Urbania Momin Community Logo"
+              alt="Urbania Connect Community Logo"
               style={{
                 height: 60,
                 width: 60,
@@ -454,7 +454,7 @@ const Donations = () => {
             color: '#444',
             borderRadius: '0 0 18px 18px'
           }}>
-            <div style={{ marginBottom: 8 }}><strong>Urbania Momin Community</strong> | www.urbania.org | info@urbania.org</div>
+            <div style={{ marginBottom: 8 }}><strong>Urbania Connect Community</strong> | www.urbania.org | info@urbania.org</div>
             <div style={{ marginBottom: 8 }}>123 Main Street, Mumbai, Maharashtra, India</div>
             <div style={{ color: '#157347', fontWeight: 700, marginTop: 10, fontSize: 16 }}>Thank you for making a difference!</div>
             <div style={{ fontSize: 13, color: '#888', marginTop: 10 }}><em>This is a computer-generated receipt and does not require a signature.</em></div>

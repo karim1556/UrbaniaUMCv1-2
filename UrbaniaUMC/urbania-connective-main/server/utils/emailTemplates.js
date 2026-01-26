@@ -78,7 +78,7 @@ const getEventRegistrationReceiptHtml = (registrationDetails) => {
           </div>
         </div>
         <div class="footer">
-          &copy; ${new Date().getFullYear()} Urbania Momin Community. All rights reserved.<br/>
+          &copy; ${new Date().getFullYear()} Urbania Connect Community. All rights reserved.<br/>
           <span style="color:#056676;">www.urbania.org</span>
         </div>
       </div>
@@ -171,7 +171,7 @@ const getDonationReceiptHtml = (donationDetails) => {
           </div>
         </div>
         <div class="footer">
-          &copy; ${new Date().getFullYear()} Urbania Momin Community. All rights reserved.<br/>
+          &copy; ${new Date().getFullYear()} Urbania Connect Community. All rights reserved.<br/>
           <span style="color:#056676;">www.urbania.org</span>
         </div>
       </div>
