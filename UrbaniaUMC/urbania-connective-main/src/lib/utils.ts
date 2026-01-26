@@ -15,14 +15,18 @@ export function generateObjectId(): string {
 }
 
 // Format currency with proper symbol and decimals
-export function formatCurrency(amount: number, currency: string = 'INR'): string {
+export function formatCurrency(amount: number | string, currency: string = 'INR'): string {
+  const num = typeof amount === 'string' ? parseFloat(amount) : Number(amount);
+  if (Number.isNaN(num)) return '';
+
+  const isInteger = Math.abs(num % 1) < Number.EPSILON;
   const formatter = new Intl.NumberFormat('en-IN', {
     style: 'currency',
     currency: currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
+    minimumFractionDigits: isInteger ? 0 : 2,
+    maximumFractionDigits: isInteger ? 0 : 2
   });
-  return formatter.format(amount);
+  return formatter.format(num);
 }
 
 // Format date to a readable string
