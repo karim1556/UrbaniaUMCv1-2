@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
+import api from "@/lib/axios";
 import { BookOpen, FileText, GraduationCap, Users, Calendar, MapPin, Clock, User, ChevronRight, CheckCircle, ArrowLeft, ArrowRight } from "lucide-react";
 import { useAuth } from "@/lib/authContext";
 
@@ -251,43 +252,31 @@ const CourseRegistration = () => {
       return;
     }
     try {
-      const response = await fetch("/api/course-registration", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...form,
-          age: Number(form.age),
-          userId: user?._id,
-          courseId: course.id,
-          courseTitle: course.title,
-        }),
-      });
-      if (response.ok) {
+      const payload = {
+        ...form,
+        age: Number(form.age),
+        userId: user?._id,
+        courseId: course.id,
+        courseTitle: course.title,
+      };
+
+      const res = await api.post('/course-registration', payload);
+      if (res && (res.status === 200 || res.status === 201)) {
         toast.success("Registration submitted! We will contact you soon.");
         navigate("/education");
       } else {
-        // Safely handle empty or non-JSON responses to avoid JSON parse errors
-        const contentType = response.headers.get("content-type") || "";
-        let serverMessage: string | undefined;
-        try {
-          if (contentType.includes("application/json")) {
-            const data = await response.json();
-            serverMessage = data?.message;
-          } else {
-            const text = await response.text();
-            serverMessage = text || response.statusText;
-          }
-        } catch (parseErr) {
-          console.warn("Failed to parse error response:", parseErr);
-          serverMessage = response.statusText;
-        }
-
-        console.error(`Registration failed: ${response.status} ${response.statusText}`, serverMessage);
-        toast.error(serverMessage || "Submission failed. Please try again later.");
+        console.error('Registration failed:', res.status, res.statusText, res.data);
+        toast.error((res.data && res.data.message) || 'Submission failed. Please try again later.');
       }
     } catch (err) {
       console.error("Registration submit error:", err);
-      toast.error("Network/server error. Please try again later.");
+      // axios errors may include a response
+      if ((err as any)?.response) {
+        const r = (err as any).response;
+        toast.error(r.data?.message || `Server error (${r.status}). Please try again later.`);
+      } else {
+        toast.error("Network/server error. Please try again later.");
+      }
     } finally {
       setSubmitting(false);
     }
