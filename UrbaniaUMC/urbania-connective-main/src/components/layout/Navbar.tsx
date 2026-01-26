@@ -138,7 +138,7 @@ const Navbar = () => {
               <span className="arabic text-xl font-bold text-white">ع</span>
             </div>
             <span className="font-display text-xl font-semibold tracking-tight hidden md:inline-block">
-              Urbania <span className="text-primary">Momin Community</span>
+              Urbania <span className="text-primary">Connect Community</span>
             </span>
           </Link>
 
@@ -318,7 +318,7 @@ const Navbar = () => {
                 <span className="arabic text-lg font-bold text-white">ع</span>
               </div>
               <span className="font-display text-lg font-semibold tracking-tight">
-                Urbania <span className="text-primary">Momin Community</span>
+                Urbania <span className="text-primary">Connect Community</span>
               </span>
             </Link>
             <Button

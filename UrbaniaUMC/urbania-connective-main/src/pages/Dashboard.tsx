@@ -1112,7 +1112,7 @@ const Dashboard = () => {
                         <img src="/urbania-logo.png" alt="Urbania Connect Community Logo" style={{ height: 44, width: 44, borderRadius: '50%' }} />
                         <div>
                           <div style={{ fontSize: 22, fontWeight: 800, color: '#157347', fontFamily: 'Georgia, serif' }}>
-                            Urbania <span style={{ color: '#222' }}>Momin Community</span>
+                            Urbania <span style={{ color: '#222' }}>Connect Community</span>
                           </div>
                           <div style={{ fontSize: 12, color: '#157347', fontWeight: 500 }}>Empowering Communities, Enriching Lives</div>
                         </div>

@@ -342,7 +342,7 @@ const Donations = () => {
                 fontFamily: 'Georgia, serif',
                 letterSpacing: 0.5
               }}>
-                Urbania <span style={{ color: '#222', fontWeight: 700 }}>Momin Community</span>
+                Urbania <span style={{ color: '#222', fontWeight: 700 }}>Connect Community</span>
               </div>
               <div style={{
                 fontSize: 15,
