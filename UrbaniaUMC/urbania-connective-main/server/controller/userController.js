@@ -407,15 +407,36 @@ const exportUsersCSV = async (req, res) => {
         if (!req.user.roles.includes('admin')) {
             return res.status(403).json({ message: 'Access denied. Admin only.' });
         }
-        const users = await User.find({}).select('-password -__v');
-        const fields = [
-            '_id', 'firstName', 'lastName', 'mobile', 'email', 'phone', 'address', 'organization', 'roles', 'createdAt', 'updatedAt', 'status'
-        ];
-        const parser = new Parser({ fields });
-        const csv = parser.parse(users.map(u => u.toObject()));
-        res.header('Content-Type', 'text/csv');
-        res.attachment('users_export.csv');
-        return res.send(csv);
+            const users = await User.find({}).select('-password -__v');
+            // Map users to a clean, admin-friendly row format
+            const rows = users.map(u => {
+                const o = u.toObject ? u.toObject() : u;
+                return {
+                    'User ID': o.customId || o._id,
+                    'Name': `${o.firstName || ''} ${o.lastName || ''}`.trim(),
+                    'Mobile': o.mobile || '',
+                    'Email': o.email || '',
+                    'Phone': o.phone || '',
+                    'Roles': Array.isArray(o.roles) ? o.roles.join('; ') : (o.roles || ''),
+                    'Status': o.status || '',
+                    'Created At': o.createdAt ? new Date(o.createdAt).toISOString() : '',
+                    'Address': [o.buildingName, o.wing, o.flatNo, o.address].filter(Boolean).join(', '),
+                    'Residence Type': o.residenceType || '',
+                    'Organization': o.organization || ''
+                };
+            });
+
+            const fields = [
+                'User ID', 'Name', 'Mobile', 'Email', 'Phone', 'Roles', 'Status', 'Created At', 'Address', 'Residence Type', 'Organization'
+            ];
+
+            const parser = new Parser({ fields, quote: '"' });
+            const csv = parser.parse(rows);
+            res.header('Content-Type', 'text/csv; charset=utf-8');
+            // Suggest a filename with date
+            const filename = `users_export_${new Date().toISOString().slice(0,10)}.csv`;
+            res.attachment(filename);
+            return res.send(csv);
     } catch (error) {
         console.error('Error exporting users as CSV:', error);
         res.status(500).json({ message: 'Failed to export users as CSV', error: error.message });

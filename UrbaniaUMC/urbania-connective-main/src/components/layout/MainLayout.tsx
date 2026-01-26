@@ -35,8 +35,6 @@ const MainLayout = ({ children }: MainLayoutProps) => {
       document.querySelectorAll(".section-fade-in").forEach((section) => {
         observer.unobserve(section);
       });
-      // cleanup submit watchdog
-      document.removeEventListener('submit', submitHandler, true);
     };
   }, []);
 
