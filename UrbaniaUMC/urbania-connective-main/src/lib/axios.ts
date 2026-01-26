@@ -8,10 +8,31 @@ const envBase = typeof import.meta !== 'undefined' && import.meta.env && (import
   : undefined;
 const fallbackOrigin = (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : 'http://localhost:4000';
 const rawBase = (envBase && envBase.trim() !== '') ? envBase : fallbackOrigin;
-// Normalize and ensure trailing '/api'
-const normalized = String(rawBase).replace(/\/+$/, '');
-const apiBaseUrl = normalized.endsWith('/api') ? normalized : normalized + '/api';
+// NOTE: Hardcode API base to the deployed backend to avoid relying on
+// environment configuration in Vercel for now.
+const apiBaseUrl = 'https://urbaniaumcv1-2.onrender.com/api';
+// Helpful runtime warnings for deployed environments
 console.log('API base URL (resolved):', apiBaseUrl, '(source:', envBase ? 'VITE_API_URL' : 'window.location.origin/fallback', ')');
+
+// If the API base resolves to the same origin as the frontend, it's likely
+// that `VITE_API_URL` was not set in the hosting environment (e.g. Vercel)
+// and requests will be sent to the static host (causing 405). Show a clear
+// warning in the browser console to help identify this misconfiguration.
+try {
+  if (typeof window !== 'undefined') {
+    const frontendOrigin = window.location.origin.replace(/:\/\/+$/, '');
+    const apiOrigin = (apiBaseUrl || '').replace(/\/api\/?$/, '').replace(/:\/\/+$/, '');
+    if (apiOrigin === frontendOrigin) {
+      if (!envBase) {
+        console.error("Configuration warning: VITE_API_URL is not set. The app will send API requests to the static host (", frontendOrigin, ") which cannot handle POST endpoints.\nSet VITE_API_URL=https://<your-backend> in Vercel Environment Variables and redeploy.");
+      } else if (String(envBase).replace(/:\/\/+$/, '') === frontendOrigin) {
+        console.error("Configuration warning: VITE_API_URL is set to the same origin as the frontend (", frontendOrigin, "). Update VITE_API_URL to point to your backend (e.g. https://urbaniaumcv1-2.onrender.com) and redeploy.");
+      }
+    }
+  }
+} catch (e) {
+  // ignore any errors from the runtime check
+}
 
 // Create Axios instance with appropriate configuration
 const api = axios.create({
