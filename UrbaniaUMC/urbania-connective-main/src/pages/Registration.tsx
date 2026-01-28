@@ -179,7 +179,7 @@ const RegistrationTypeCard = ({
 
 const Registration = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, user: authUser } = useAuth();
   const location = useLocation();
   const [activeType, setActiveType] = useState(registrationTypes[0].id);
   const [activeTab, setActiveTab] = useState("type");
@@ -189,9 +189,6 @@ const Registration = () => {
     email: "",
     phone: "",
     address: "",
-    city: "",
-    state: "",
-    zip: "",
     gender: "" as '' | 'M' | 'F',
     password: "",
     birthdate: "",
@@ -201,6 +198,23 @@ const Registration = () => {
     specialRequests: "",
     agreeTerms: false
   });
+
+  // Prefill from authenticated user profile when available
+  React.useEffect(() => {
+    if (!authUser) return;
+    setFormData(prev => ({
+      ...prev,
+      firstName: authUser.firstName || prev.firstName,
+      lastName: authUser.lastName || prev.lastName,
+      email: authUser.email || prev.email,
+      phone: authUser.mobile || authUser.phone || prev.phone,
+      address: authUser.buildingName ? `${authUser.buildingName}${authUser.wing ? ' ' + authUser.wing : ''}${authUser.flatNo ? ' ' + authUser.flatNo : ''}` : (authUser.address || prev.address),
+      gender: authUser.gender || prev.gender,
+      birthdate: authUser.birthdate || prev.birthdate,
+      occupationProfile: authUser.occupationProfile || prev.occupationProfile,
+      residenceType: authUser.residenceType || prev.residenceType,
+    }));
+  }, [authUser]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const selectedType = registrationTypes.find(type => type.id === activeType) || registrationTypes[0];
@@ -252,11 +266,12 @@ const Registration = () => {
         email: formData.email,
         password: formData.password,
         buildingName: formData.address,
-        wing: formData.state,
-        flatNo: formData.zip,
+        // prefer wing/flat from authenticated profile if available
+        wing: authUser?.wing || '',
+        flatNo: authUser?.flatNo || '',
         birthdate: formData.birthdate,
         occupationProfile: formData.occupationProfile,
-        workplaceAddress: formData.city,
+        workplaceAddress: formData.address,
         gender: formData.gender,
         forumContribution: '',
         residenceType: formData.residenceType,
@@ -275,9 +290,6 @@ const Registration = () => {
         email: "",
         phone: "",
         address: "",
-        city: "",
-        state: "",
-        zip: "",
         gender: "",
         password: "",
         birthdate: "",
@@ -537,41 +549,7 @@ const Registration = () => {
                       />
                     </div>
                     
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                      <div className="col-span-2">
-                        <Label htmlFor="city">City</Label>
-                        <Input 
-                          id="city" 
-                          name="city" 
-                          placeholder="Enter your city" 
-                          value={formData.city}
-                          onChange={handleChange}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="state">State</Label>
-                        <Input 
-                          id="state" 
-                          name="state" 
-                          placeholder="State" 
-                          value={formData.state}
-                          onChange={handleChange}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="zip">ZIP Code</Label>
-                        <Input 
-                          id="zip" 
-                          name="zip" 
-                          placeholder="ZIP" 
-                          value={formData.zip}
-                          onChange={handleChange}
-                          required
-                        />
-                      </div>
-                    </div>
+                    {/* city/state/zip removed - using authenticated profile or address instead */}
                     
                     {(activeType === "event" || activeType === "program") && (
                       <div>
@@ -658,7 +636,7 @@ const Registration = () => {
                         <h3 className="font-medium mb-2">Address</h3>
                         <div className="bg-accent/50 p-4 rounded-lg space-y-2">
                           <p>{formData.address}</p>
-                          <p>{formData.city}, {formData.state} {formData.zip}</p>
+                          <p>{formData.address}</p>
                         </div>
                       </div>
                     </div>

@@ -66,9 +66,6 @@ interface FormData {
   email: string;
   phone: string;
   address: string;
-  city: string;
-  state: string;
-  zipCode: string;
   eventId: string;
   eventName: string;
   eventDate?: string;
@@ -117,9 +114,6 @@ const EventRegistration = () => {
     email: "",
     phone: "",
     address: "",
-    city: "",
-    state: "",
-    zipCode: "",
     // Event details
     eventId: "",
     eventName: "",
@@ -272,7 +266,11 @@ const EventRegistration = () => {
         lastName: prev.lastName || lastName || "",
         email: prev.email || user.email || "",
         phone: prev.phone || user.phone || "",
-        address: prev.address || user.address || ""
+        address: prev.address || user.address || "",
+        buildingName: prev.buildingName || (user as any).buildingName || "",
+        wing: prev.wing || (user as any).wing || "",
+        flatNo: prev.flatNo || (user as any).flatNo || "",
+        gender: prev.gender || (user as any).gender || ''
       }));
     }
   }, [authLoading, isAuthenticated, user]);
@@ -610,7 +608,11 @@ const EventRegistration = () => {
           lastName: user.lastName || prev.lastName || "",
           email: user.email || prev.email || "",
           phone: user.phone || user.mobile || prev.phone || "",
-          address: user.address || prev.address || ""
+          address: user.address || prev.address || "",
+          buildingName: user.buildingName || prev.buildingName || "",
+          wing: user.wing || prev.wing || "",
+          flatNo: user.flatNo || prev.flatNo || "",
+          gender: (user as any).gender || prev.gender || ''
         }));
       });
     }
@@ -960,35 +962,7 @@ const EventRegistration = () => {
                           />
                         </div>
                       </div>
-                      <div className="grid grid-cols-3 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="city">City</Label>
-                          <Input
-                            id="city"
-                            name="city"
-                            value={formData.city}
-                            onChange={handleChange}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="state">State</Label>
-                          <Input
-                            id="state"
-                            name="state"
-                            value={formData.state}
-                            onChange={handleChange}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="zipCode">Zip Code</Label>
-                          <Input
-                            id="zipCode"
-                            name="zipCode"
-                            value={formData.zipCode}
-                            onChange={handleChange}
-                          />
-                        </div>
-                      </div>
+                      {/* City / State / Zip removed - using building/wing/flat or profile address */}
                     </CardContent>
                     <CardFooter className="flex justify-between">
                       <UIButton type="button" variant="outline" onClick={prevStep}>
