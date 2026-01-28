@@ -12,8 +12,12 @@ const FinancialAidForm = ({ formData, setFormData }: any) => {
       </div>
 
       <div className="mb-3">
-        <label className="block text-sm font-medium mb-1">Family Members Count</label>
-        <input type="number" className="w-full border rounded px-3 py-2" value={formData.familyCount||''} onChange={e=>update('familyCount', e.target.value)} />
+        <label className="block text-sm font-medium mb-1">Gender</label>
+        <select className="w-full border rounded px-3 py-2" value={formData.gender||''} onChange={e=>update('gender', e.target.value)}>
+          <option value="">Select gender</option>
+          <option value="M">Male</option>
+          <option value="F">Female</option>
+        </select>
       </div>
 
       <div className="mb-3">

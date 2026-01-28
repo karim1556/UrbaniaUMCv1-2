@@ -35,13 +35,7 @@ const defaultForm = {
   middleName: '',
   occupationProfile: '',
   workplaceAddress: '',
-  familyCount: '',
-  maleAbove18: '',
-  maleAbove60: '',
-  maleUnder18: '',
-  femaleAbove18: '',
-  femaleAbove60: '',
-  femaleUnder18: '',
+  gender: '',
   forumContribution: '',
   residenceType: '',
 };
@@ -487,43 +481,22 @@ const AddUser = () => {
                       </div>
                     </div>
                   </div>
-                  {/* Occupation & Brief Profile */}
+                  {/* Occupation & Other */}
                   <div className="col-span-1">
-                    <Label htmlFor="occupationProfile" className="text-sm font-medium">Occupation & Brief Profile</Label>
-                    <Input id="occupationProfile" name="occupationProfile" value={form.occupationProfile} onChange={handleChange} placeholder="Occupation & profile" />
+                    <Label htmlFor="occupationProfile" className="text-sm font-medium">Occupation & Other (Please Specify)</Label>
+                    <Input id="occupationProfile" name="occupationProfile" value={form.occupationProfile} onChange={handleChange} placeholder="Occupation & other (please specify)" />
                   </div>
                   <div className="col-span-1">
                     <Label htmlFor="workplaceAddress" className="text-sm font-medium">Workplace Address</Label>
                     <Input id="workplaceAddress" name="workplaceAddress" value={form.workplaceAddress} onChange={handleChange} placeholder="Workplace address" />
                   </div>
-                  {/* Family Members */}
                   <div className="col-span-1">
-                    <Label htmlFor="familyCount" className="text-sm font-medium">Family Members (Total)</Label>
-                    <Input id="familyCount" name="familyCount" type="number" value={form.familyCount} onChange={handleChange} placeholder="Total family members" />
-                  </div>
-                  <div className="col-span-1">
-                    <Label className="text-sm font-medium">Males (18-60)</Label>
-                    <Input id="maleAbove18" name="maleAbove18" type="number" value={form.maleAbove18} onChange={handleChange} placeholder="Males 18-60" />
-                  </div>
-                  <div className="col-span-1">
-                    <Label className="text-sm font-medium">Males (Above 60)</Label>
-                    <Input id="maleAbove60" name="maleAbove60" type="number" value={form.maleAbove60} onChange={handleChange} placeholder="Males above 60" />
-                  </div>
-                  <div className="col-span-1">
-                    <Label className="text-sm font-medium">Males (Under 18)</Label>
-                    <Input id="maleUnder18" name="maleUnder18" type="number" value={form.maleUnder18} onChange={handleChange} placeholder="Males under 18" />
-                  </div>
-                  <div className="col-span-1">
-                    <Label className="text-sm font-medium">Females (18-60)</Label>
-                    <Input id="femaleAbove18" name="femaleAbove18" type="number" value={form.femaleAbove18} onChange={handleChange} placeholder="Females 18-60" />
-                  </div>
-                  <div className="col-span-1">
-                    <Label className="text-sm font-medium">Females (Above 60)</Label>
-                    <Input id="femaleAbove60" name="femaleAbove60" type="number" value={form.femaleAbove60} onChange={handleChange} placeholder="Females above 60" />
-                  </div>
-                  <div className="col-span-1">
-                    <Label className="text-sm font-medium">Females (Under 18)</Label>
-                    <Input id="femaleUnder18" name="femaleUnder18" type="number" value={form.femaleUnder18} onChange={handleChange} placeholder="Females under 18" />
+                    <Label htmlFor="gender" className="text-sm font-medium">Gender</Label>
+                    <select id="gender" name="gender" value={form.gender} onChange={handleSelectChange} className="w-full border rounded px-3 py-2">
+                      <option value="">Select gender</option>
+                      <option value="M">Male</option>
+                      <option value="F">Female</option>
+                    </select>
                   </div>
                 </div>
                 {/* Bio full width at the bottom */}

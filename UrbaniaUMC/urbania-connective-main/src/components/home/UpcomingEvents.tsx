@@ -25,7 +25,7 @@ const EventCard = ({ event }: EventCardProps) => {
             <Badge variant={event.pricing.type === "free" ? "secondary" : "default"}>
               {event.pricing.type === "free"
                 ? "Free"
-                : `₹${parseFloat(event.pricing.amount).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`}
+                : `₹${Number(event.pricing.amount).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`}
             </Badge>
           {event.featured && (
             <Badge variant="secondary">Featured</Badge>

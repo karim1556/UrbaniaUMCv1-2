@@ -82,6 +82,7 @@ interface FormData {
   wing: string;
   flatNo: string;
   guests?: Guest[];
+  gender?: 'M' | 'F' | '';
   
 }
 
@@ -142,6 +143,7 @@ const EventRegistration = () => {
     wing: "",
     flatNo: "",
     guests: [],
+      gender: '',
   });
 
   const { user, isAuthenticated, loading: authLoading } = useAuth();
@@ -291,30 +293,20 @@ const EventRegistration = () => {
     if (!(isAuthenticated && user)) return;
     if (formData.guests && formData.guests.length > 0) return; // don't overwrite existing entries
 
-    const effectiveUser = (user as any).isFamilyMember && (user as any).owner ? (user as any).owner : user;
-
+    const effectiveUser = user;
     const selfName = `${effectiveUser.firstName || ''} ${effectiveUser.lastName || ''}`.trim();
     const selfAge = effectiveUser.birthdate ? String(new Date().getFullYear() - new Date(effectiveUser.birthdate).getFullYear()) : '';
     const selfMember: Guest = { name: selfName || (effectiveUser.name || ''), age: selfAge || '' };
 
-    const othersRaw = Array.isArray(effectiveUser.familyMembers) ? effectiveUser.familyMembers : [];
-    const others: Guest[] = othersRaw.map((m: any) => ({
-      name: m.name || `${m.firstName || ''} ${m.lastName || ''}`.trim() || '',
-      age: m.age ? String(m.age) : (m.birthdate ? String(new Date().getFullYear() - new Date(m.birthdate).getFullYear()) : '')
-    }));
-
-    // If others already include self by email/name, prefer others as-is, else prepend self
-    const hasSelf = others.some(o => o.name && selfMember.name && o.name.toLowerCase() === selfMember.name.toLowerCase());
-    const combined = hasSelf ? others : [selfMember, ...others];
-
-    setFormData(prev => ({ ...prev, guests: combined }));
+    setFormData(prev => ({ ...prev, guests: [selfMember], gender: (effectiveUser as any).gender || '' }));
     // eslint-disable-next-line
   }, [isAuthenticated, user]);
 
   // Helper function to validate guests
   const validateGuests = () => {
     if (!formData.guests || formData.guests.length === 0) {
-      return false; // Must have at least one guest
+      // No guests added is acceptable (self registration)
+      return true;
     }
 
     // Ensure every guest has both name and age
@@ -518,7 +510,8 @@ const EventRegistration = () => {
         // Get last two digits of phone
         let phone = formData.phone || "";
         let mobileCode = phone.slice(-2);
-        return `${buildingCode}/${wing}/${flatNo}/${mobileCode}`;
+        const genderToken = (formData.gender || (user as any)?.gender) || 'X';
+        return `${buildingCode}/${wing}/${flatNo}/${genderToken}/${mobileCode}`;
       };
 
       const registrationData = {
@@ -593,16 +586,9 @@ const EventRegistration = () => {
         return;
       }
 
-      // Validate that at least one participant (family member) is added
-      const totalParticipants = formData.guests ? formData.guests.length : 0;
-      if (totalParticipants === 0) {
-        toast.error("Please add at least one family member");
-        return;
-      }
-
-      // Validate guest information using improved validation
-      if (!validateGuests()) {
-        toast.error("Please fill in all guest names and ages for participants you've added");
+      // Validate guest information if any participants added
+      if (formData.guests && formData.guests.length > 0 && !validateGuests()) {
+        toast.error("Please fill in all participant names and ages for participants you've added");
         return;
       }
     }
@@ -799,6 +785,22 @@ const EventRegistration = () => {
                             required
                           />
                         </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="gender">Gender</Label>
+                          <Select value={formData.gender || ''} onValueChange={(v) => setFormData(prev => ({ ...prev, gender: v as 'M' | 'F' | '' }))}>
+                            <SelectTrigger id="gender">
+                              <SelectValue placeholder="Select gender" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="M">Male</SelectItem>
+                              <SelectItem value="F">Female</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div />
                       </div>
 
                       <div className="grid grid-cols-2 gap-4">

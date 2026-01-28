@@ -120,98 +120,7 @@ const getStatusBadgeVariant = (status: string): 'default' | 'secondary' | 'destr
 
 const Dashboard = () => {
   const { user, getInitials, refreshUserProfile } = useAuth();
-  const displayUser = user?.isFamilyMember && (user as any).owner ? (user as any).owner : user;
-  const [ownerFull, setOwnerFull] = useState<any | null>(null);
-  const [showJoinModal, setShowJoinModal] = useState(false);
-  const [joinCode, setJoinCode] = useState('');
-  const [joining, setJoining] = useState(false);
-  useEffect(() => {
-    let mounted = true;
-    const fetchOwner = async () => {
-      try {
-        if ((user as any)?.isFamilyMember && (user as any).owner && (user as any).owner._id) {
-          const res = await userAPI.getUserById((user as any).owner._id);
-          if (mounted) setOwnerFull(res.data?.data || res.data);
-        }
-      } catch (err) {
-        // ignore
-      }
-    };
-    fetchOwner();
-    return () => { mounted = false; };
-  }, [user]);
-
-  const effectiveOwner = ownerFull || displayUser;
-  const [computedFamilySize, setComputedFamilySize] = useState<number | null>(null);
-
-  useEffect(() => {
-    const compute = async () => {
-      const rawCount = Number(effectiveOwner?.familyCount || 0);
-      const membersLen = (effectiveOwner?.familyMembers && Array.isArray(effectiveOwner.familyMembers)) ? effectiveOwner.familyMembers.length : 0;
-      // If owner has a sensible familyCount use it
-      if (rawCount > 0) {
-        setComputedFamilySize(rawCount);
-        return;
-      }
-
-      // Otherwise if owner has explicit familyMembers array, use it + owner
-      if (membersLen > 0) {
-        setComputedFamilySize(membersLen + 1);
-        return;
-      }
-
-      // Fallback: fetch all users and count those that map to this owner.
-      try {
-        if (!effectiveOwner || !effectiveOwner._id) {
-          setComputedFamilySize(1);
-          return;
-        }
-        const res = await userAPI.getUsersByOwner(effectiveOwner._id);
-        const all = res.data?.data || res.data || [];
-        const ownerCustomId = effectiveOwner.customId;
-        const ownerId = effectiveOwner._id;
-        const members = all.filter((u: any) => {
-          if (!u) return false;
-          // explicit pointer
-          if (u.familyOf && String(u.familyOf) === String(ownerId)) return true;
-          // phone placeholder pattern
-          const phone = (u.mobile || u.phone || '').toString();
-          if (phone && phone.startsWith('fm_')) {
-            const token = phone.substring(3).split('_')[0];
-            if (ownerCustomId && token && token.toLowerCase() === ownerCustomId.toLowerCase()) return true;
-          }
-          return false;
-        });
-        setComputedFamilySize((members.length || 0) + 1);
-      } catch (err) {
-        console.error('Error fetching all users for family size:', err);
-        setComputedFamilySize(1);
-      }
-    };
-    compute();
-  }, [effectiveOwner]);
-
-  const familySize = computedFamilySize ?? 1;
-  const handleJoinFamily = async () => {
-    if (!joinCode) return;
-    setJoining(true);
-    try {
-      const res = await userAPI.joinFamilyByCode({ code: joinCode });
-      await refreshUserProfile();
-      setShowJoinModal(false);
-      setJoinCode('');
-      // optional toast
-      // @ts-ignore
-      if (res && res.data) {
-        // success
-      }
-    } catch (err) {
-      console.error('Join family error', err);
-      alert(err.response?.data?.message || 'Failed to join family');
-    } finally {
-      setJoining(false);
-    }
-  };
+  const displayUser = user;
   const location = useLocation();
   // Read tab from query string
   const params = new URLSearchParams(location.search);
@@ -501,7 +410,7 @@ const Dashboard = () => {
                     <CardTitle className="text-sm font-medium">Debug: Auth State</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <pre className="text-xs max-h-48 overflow-auto p-2 bg-slate-50 rounded border">{JSON.stringify({ id: user?._id, email: user?.email, familyOf: (user as any)?.familyOf, isFamilyMember: (user as any)?.isFamilyMember, ownerAttached: (user as any)?.owner ? true : false, residenceType: user?.residenceType, customId: user?.customId }, null, 2)}</pre>
+                    <pre className="text-xs max-h-48 overflow-auto p-2 bg-slate-50 rounded border">{JSON.stringify({ id: user?._id, email: user?.email, gender: (user as any)?.gender, residenceType: user?.residenceType, customId: user?.customId }, null, 2)}</pre>
                     <div className="text-xs text-muted-foreground mt-2">If the join button isn't visible, paste the JSON above.</div>
                   </CardContent>
                 </Card>
@@ -596,32 +505,7 @@ const Dashboard = () => {
                   )}
                 </CardContent>
               </Card>
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium">My Family</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="text-2xl font-bold">{familySize}</div>
-                    <p className="text-xs text-muted-foreground">Members in your household</p>
-                    <div className="mt-2">
-                      <Button variant="link" size="sm" className="p-0 h-auto" asChild>
-                        <Link to="/profile?edit=family">Manage family</Link>
-                      </Button>
-                    </div>
-                    {/* If user is not linked to a family, show Join Family action. Exclude household heads (residenceType === 'owner'). */}
-                    {(() => {
-                      // Debugging info
-                      // eslint-disable-next-line no-console
-                      console.debug('Dashboard: join-button-check', { id: user?._id, familyOf: (user as any)?.familyOf, isFamilyMember: (user as any)?.isFamilyMember, ownerAttached: (user as any)?.owner ? true : false, residenceType: user?.residenceType });
-                      const canJoin = !!user && !(user as any).familyOf && !(user as any).isFamilyMember;
-                      return canJoin ? (
-                        <div className="mt-3">
-                          <Button onClick={()=>setShowJoinModal(true)} size="sm">Join Family</Button>
-                        </div>
-                      ) : null;
-                    })()}
-                </CardContent>
-              </Card>
+              {/* Family features removed: independent registrations use single `gender` field */}
             </div>
 
             {/* Recent Activity */}
@@ -768,22 +652,7 @@ const Dashboard = () => {
             )}
           </TabsContent>
 
-          {/* Join Family Modal */}
-          <Dialog open={showJoinModal} onOpenChange={setShowJoinModal}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Join Family</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <p>Enter the family code provided by the household head to join their family.</p>
-                <input className="w-full border rounded px-3 py-2" value={joinCode} onChange={(e)=>setJoinCode(e.target.value)} placeholder="Enter code" />
-                <div className="flex gap-2 justify-end">
-                  <Button variant="outline" onClick={()=>setShowJoinModal(false)}>Cancel</Button>
-                  <Button onClick={handleJoinFamily} disabled={joining}>{joining ? 'Joining...' : 'Join'}</Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+          {/* Family join modal removed */}
 
           {/* Events Tab */}
           <TabsContent value="events" className="space-y-4">

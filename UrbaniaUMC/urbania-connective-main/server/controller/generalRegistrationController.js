@@ -8,7 +8,7 @@ const createGeneralRegistration = async (req, res) => {
             // Personal information
             firstName, lastName, email, phone, address, city, state, zipCode,
             // Membership details
-            membershipType, membershipDuration, familyMembers,
+            membershipType, membershipDuration, gender,
             // Emergency contact
             emergencyContact,
             // Demographics
@@ -55,8 +55,8 @@ const createGeneralRegistration = async (req, res) => {
             // Set start and end dates
             startDate: new Date(),
             
-            // Add family members if provided and membership type is family
-            ...(membershipType === 'family' && familyMembers && { familyMembers }),
+            // Membership gender (if applicable)
+            ...(gender && { gender }),
             
             // Add emergency contact if provided
             ...(emergencyContact && { emergencyContact }),
@@ -208,7 +208,7 @@ const updateGeneralRegistration = async (req, res) => {
         const { id } = req.params;
         const {
             firstName, lastName, email, phone, address, city, state, zipCode,
-            emergencyContact, demographicInfo, familyMembers,
+            emergencyContact, demographicInfo, gender,
             interests, volunteerPreferences, specialRequests
         } = req.body;
 
@@ -240,7 +240,7 @@ const updateGeneralRegistration = async (req, res) => {
         if (zipCode) registration.zipCode = zipCode;
         if (emergencyContact) registration.emergencyContact = emergencyContact;
         if (demographicInfo) registration.demographicInfo = demographicInfo;
-        if (familyMembers) registration.familyMembers = familyMembers;
+        // familyMembers removed - registrations are individual
         if (interests) registration.interests = interests;
         if (volunteerPreferences) registration.volunteerPreferences = volunteerPreferences;
         if (specialRequests) registration.specialRequests = specialRequests;

@@ -2,11 +2,11 @@ import api from './axios';
 
 // Auth APIs
 export const authAPI = {
-  login: (data: { email: string; password: string }) => 
+  login: (data: { email: string; password: string }) =>
     api.post('/api/auth/login', data),
-  register: (data: { firstName: string; middleName?: string; lastName: string; mobile: string; email: string; password: string; buildingName: string; wing: string; flatNo: string; birthdate?: string; occupationProfile?: string; workplaceAddress?: string; familyCount?: number; maleAbove18?: number; maleAbove60?: number; maleUnder18?: number; femaleAbove18?: number; femaleAbove60?: number; femaleUnder18?: number; forumContribution?: string; residenceType?: 'owner' | 'tenant' }) => 
+  register: (data: { firstName: string; middleName?: string; lastName: string; mobile: string; email: string; password: string; buildingName: string; wing: string; flatNo: string; birthdate?: string; occupationProfile?: string; occupationType?: string; occupationDescription?: string; workplaceAddress?: string; forumContribution?: string; residenceType?: 'owner' | 'tenant'; gender?: 'M' | 'F' }) =>
     api.post('/api/auth/register', data),
-  adminRegister: (data: { firstName: string; lastName: string; mobile: string; email: string; password: string; isAdmin: boolean }) => 
+  adminRegister: (data: { firstName: string; middleName?: string; lastName?: string; mobile: string; email: string; password: string; buildingName: string; wing: string; flatNo: string; birthdate?: string; occupationProfile?: string; occupationType?: string; occupationDescription?: string; workplaceAddress?: string; forumContribution?: string; residenceType?: 'owner' | 'tenant'; gender?: 'M' | 'F' }) =>
     api.post('/api/auth/admin-register', data),
   logout: () => api.post('/api/auth/logout'),
   getProfile: () => api.get('/api/auth/profile'),
@@ -35,16 +35,9 @@ export const userAPI = {
     flatNo?: string;
     occupationProfile?: string;
     workplaceAddress?: string;
-    familyCount?: number;
-    maleAbove18?: number;
-    maleAbove60?: number;
-    maleUnder18?: number;
-    femaleAbove18?: number;
-    femaleAbove60?: number;
-    femaleUnder18?: number;
     forumContribution?: string;
     residenceType?: 'owner' | 'tenant';
-    familyMembers?: Array<{ name?: string; email?: string; age?: number; category?: string }>;
+    gender?: 'M' | 'F';
   }) => api.put('/api/users/profile', data),
   
   // Password
@@ -76,35 +69,9 @@ export const userAPI = {
   getUsers: () => api.get('/api/users'),
   getUserById: (id: string) => api.get(`/api/users/${id}`),
   getAllUsers: () => api.get('/api/users/all'),
-  generateFamilyCode: () => api.post('/api/users/profile/family-code'),
-  joinFamilyByCode: (data: { code: string }) => api.post('/api/users/join-family', data),
   getUsersByOwner: (ownerId: string) => api.get(`/api/users/by-owner/${ownerId}`),
+  
 };
-
-// Volunteer APIs
-export const volunteerAPI = {
-  apply: (data: {
-    name: string;
-    email: string;
-    phone: string;
-    interest: string; // This is the role ID ('education', 'events', etc.)
-    availability: string;
-    experience: string;
-  }) => api.post('/api/volunteers/apply', data),
-  checkEmailExists: (email: string) => api.get(`/api/volunteers/check-email/${encodeURIComponent(email)}`),
-  submit: (data: any) => api.post('/api/volunteers/submit', data),
-  getMyRequest: () => api.get('/api/volunteers/my-request'),
-  getMyVolunteerProfile: () => api.get('/api/volunteers/my-profile'),
-  getAllRequests: () => api.get('/api/volunteers'),
-  getRequestById: (id: string) => api.get(`/api/volunteers/${id}`),
-  approveRequest: (id: string) => api.post(`/api/volunteers/${id}/approve`),
-  rejectRequest: (id: string, data: { rejectionReason: string }) => 
-    api.post(`/api/volunteers/${id}/reject`, data),
-  getVolunteersByUserId: (userId: string) => api.get(`/api/volunteers/by-user/${userId}`),
-  getVolunteersByVolunteerId: (volunteerId: string) => api.get(`/api/volunteers/by-volunteer/${volunteerId}`),
-};
-
-// Event APIs
 export const eventAPI = {
   getEvents: () => api.get('/api/events'),
   getEventById: (id: string) => api.get(`/api/events/${id}`),
@@ -227,6 +194,15 @@ export const donationAPI = {
   }
 };
 
+// Volunteer API (client-side hooks used across app)
+export const volunteerAPI = {
+  apply: (data: any) => api.post('/api/volunteers/apply', data),
+  checkEmailExists: (email: string) => api.get(`/api/volunteers/check-email?email=${encodeURIComponent(email)}`),
+  getMyVolunteerProfile: () => api.get('/api/volunteers/me'),
+  getVolunteersByUserId: (userId: string) => api.get(`/api/volunteers/by-user/${userId}`),
+  getVolunteersByVolunteerId: (volunteerId: string) => api.get(`/api/volunteers/by-volunteer/${volunteerId}`),
+};
+
 // Registration APIs - for all types of registrations
 export const registrationAPI = {
   // General Registration (memberships)
@@ -246,7 +222,7 @@ export const registrationAPI = {
       phone: string;
       relationship?: string;
     };
-    familyMembers?: any[];
+    gender?: 'M' | 'F';
     demographicInfo?: any;
     paymentInfo?: any;
     referralSource?: string;
@@ -276,7 +252,7 @@ export const registrationAPI = {
     programName: string;
     sessionPreference: string;
     participantAge?: string;
-    participantGender?: string;
+    // participantGender removed; use gender
     numberOfParticipants?: string;
     additionalParticipants?: any[];
     emergencyContact: {
@@ -355,7 +331,7 @@ export const registrationAPI = {
     preferredTime?: string;
     recurring?: boolean;
     recurringFrequency?: string;
-    householdMembers?: any[];
+    // householdMembers removed
     incomeVerification?: {
       hasIncome?: boolean;
       incomeSource?: string;

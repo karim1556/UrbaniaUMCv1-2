@@ -111,13 +111,7 @@ const UserDetailsDialog: React.FC<UserDetailsDialogProps> = ({ user, isOpen, onC
                     <DetailItem icon={<UserRound />} label="Middle Name" value={user.middleName} />
                     <DetailItem icon={<UserCog />} label="Occupation & Profile" value={user.occupationProfile} />
                     <DetailItem icon={<Building2 />} label="Workplace Address" value={user.workplaceAddress} />
-                    <DetailItem icon={<UserRound />} label="Family Members (Total)" value={user.familyCount} />
-                    <DetailItem icon={<UserRound />} label="Males (18-60)" value={user.maleAbove18} />
-                    <DetailItem icon={<UserRound />} label="Males (Above 60)" value={user.maleAbove60} />
-                    <DetailItem icon={<UserRound />} label="Males (Under 18)" value={user.maleUnder18} />
-                                    <DetailItem icon={<UserRound />} label="Females (18-60)" value={user.femaleAbove18} />
-                    <DetailItem icon={<UserRound />} label="Females (Above 60)" value={user.femaleAbove60} />
-                    <DetailItem icon={<UserRound />} label="Females (Under 18)" value={user.femaleUnder18} />
+                    <DetailItem icon={<UserRound />} label="Gender" value={user.gender === 'M' ? 'Male' : user.gender === 'F' ? 'Female' : user.gender} />
                     <DetailItem icon={<UserCog />} label="Forum Contribution" value={user.forumContribution} />
                                     <DetailItem icon={<Building2 />} label="Residence Type" value={user.residenceType === 'owner' ? 'Owner' : user.residenceType === 'tenant' ? 'Tenant' : user.residenceType} />
                 </div>

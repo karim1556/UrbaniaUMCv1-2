@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { auth } = require('../middleware/auth');
-const { getProfile, updateProfile, updatePassword, updatePreferences, getAllUsers, generateFamilyCode, joinFamilyByCode, getUsersByOwner, exportUsersCSV, exportUsersPDF, exportUsersExcel, importUsers, deleteUser, updateUser, deleteMyProfile, createUser } = require('../controller/userController');
+const { getProfile, updateProfile, updatePassword, updatePreferences, getAllUsers, getUsersByOwner, exportUsersCSV, exportUsersPDF, exportUsersExcel, importUsers, deleteUser, updateUser, deleteMyProfile, createUser } = require('../controller/userController');
 
 // All routes are protected with auth middleware
 router.use(auth);
@@ -15,9 +15,7 @@ router.put('/profile', updateProfile);
 router.delete('/profile', deleteMyProfile);
 router.put('/password', updatePassword);
 router.put('/preferences', updatePreferences);
-// Family code endpoints
-router.post('/profile/family-code', generateFamilyCode);
-router.post('/join-family', joinFamilyByCode);
+// Family code endpoints removed (feature deprecated)
 // Get members by owner id
 router.get('/by-owner/:id', getUsersByOwner);
 

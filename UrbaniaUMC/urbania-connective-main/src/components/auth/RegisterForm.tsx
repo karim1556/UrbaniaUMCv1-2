@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 const RegisterForm = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const [firstName, setFirstName] = useState("");
   const [middleName, setMiddleName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -28,26 +28,23 @@ const RegisterForm = () => {
   const [occupationType, setOccupationType] = useState("");
   const [occupationDescription, setOccupationDescription] = useState("");
   const [workplaceAddress, setWorkplaceAddress] = useState("");
-  const [familyCount, setFamilyCount] = useState("");
-  const [maleAbove18, setMaleAbove18] = useState("");
-  const [maleAbove60, setMaleAbove60] = useState("");
-  const [maleUnder18, setMaleUnder18] = useState("");
-  const [femaleAbove18, setFemaleAbove18] = useState("");
-  const [femaleAbove60, setFemaleAbove60] = useState("");
-  const [femaleUnder18, setFemaleUnder18] = useState("");
+  const [gender, setGender] = useState<'M' | 'F' | ''>('');
   const [forumContribution, setForumContribution] = useState("");
   const [residenceType, setResidenceType] = useState<'owner' | 'tenant' | ''>('');
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [createdCustomId, setCreatedCustomId] = useState<string | null>(null);
 
   // If already authenticated, redirect to home or intended destination
   const state = location.state as { from?: string } | null;
   const redirectPath = state?.from || "/";
 
-  if (isAuthenticated) {
-    navigate(redirectPath, { replace: true });
-    return null;
-  }
+  // Avoid navigating during render to prevent setState-in-render warnings
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      navigate(redirectPath, { replace: true });
+    }
+  }, [authLoading, isAuthenticated, navigate, redirectPath]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,6 +88,9 @@ const RegisterForm = () => {
     if (!flatNo || flatNo.trim().length < 1) {
       errors.push("Flat number is required");
     }
+    if (!gender || (gender !== 'M' && gender !== 'F')) {
+      errors.push("Gender is required");
+    }
 
     if (errors.length > 0) {
       errors.forEach(error => toast.error(error));
@@ -115,16 +115,14 @@ const RegisterForm = () => {
         occupationType: occupationType || undefined,
         occupationDescription: occupationDescription.trim() || undefined,
         workplaceAddress: workplaceAddress.trim(),
-        familyCount: familyCount ? parseInt(familyCount) : undefined,
-        maleAbove18: maleAbove18 ? parseInt(maleAbove18) : undefined,
-        maleAbove60: maleAbove60 ? parseInt(maleAbove60) : undefined,
-        maleUnder18: maleUnder18 ? parseInt(maleUnder18) : undefined,
-        femaleAbove18: femaleAbove18 ? parseInt(femaleAbove18) : undefined,
-        femaleAbove60: femaleAbove60 ? parseInt(femaleAbove60) : undefined,
-        femaleUnder18: femaleUnder18 ? parseInt(femaleUnder18) : undefined,
+        gender: gender || undefined,
         forumContribution: forumContribution.trim(),
         residenceType: residenceType || undefined,
       });
+
+      // capture server-generated customId if present
+      const returnedCustomId = response?.data?.user?.customId || response?.data?.customId || null;
+      if (returnedCustomId) setCreatedCustomId(String(returnedCustomId));
 
       toast.success("Registration successful! Please log in to continue.");
       setSubmitted(true);
@@ -144,6 +142,9 @@ const RegisterForm = () => {
           <p className="text-muted-foreground text-sm">
             Your account has been successfully created. You can now login.
           </p>
+          {createdCustomId && (
+            <p className="text-sm mt-2">Your membership ID: <strong>{createdCustomId}</strong></p>
+          )}
         </div>
 
         <Button
@@ -198,18 +199,21 @@ const RegisterForm = () => {
               <SelectValue placeholder="Select occupation" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="Doctor">Doctor</SelectItem>
-              <SelectItem value="Engineer">Engineer</SelectItem>
-              <SelectItem value="Business">Business</SelectItem>
-              <SelectItem value="Government">Government</SelectItem>
-              <SelectItem value="Freelancer">Freelancer</SelectItem>
-              <SelectItem value="Social worker">Social worker</SelectItem>
-              <SelectItem value="Others">Others</SelectItem>
+              <SelectItem value="Salaried - Private Sector">Salaried – Private Sector</SelectItem>
+              <SelectItem value="Salaried - Government / PSU">Salaried – Government / PSU</SelectItem>
+              <SelectItem value="Business Owner / Proprietor">Business Owner / Proprietor</SelectItem>
+              <SelectItem value="Self-Employed Professional">Self-Employed Professional</SelectItem>
+              <SelectItem value="Freelancer / Consultant">Freelancer / Consultant</SelectItem>
+              <SelectItem value="Student">Student</SelectItem>
+              <SelectItem value="Homemaker">Homemaker</SelectItem>
+              <SelectItem value="Retired">Retired</SelectItem>
+              <SelectItem value="Doctors">Doctors</SelectItem>
+              <SelectItem value="Other (Please Specify)">Other (Please Specify)</SelectItem>
             </SelectContent>
           </Select>
         </div>
         <div className="space-y-1 w-full">
-          <Label htmlFor="occupationDescription">Brief Description</Label>
+          <Label htmlFor="occupationDescription">Other (Please Specify)</Label>
           <Textarea id="occupationDescription" placeholder="Describe your role or experience" value={occupationDescription} onChange={(e) => setOccupationDescription(e.target.value)} className="w-full" />
         </div>
         <div className="space-y-1 w-full">
@@ -217,34 +221,16 @@ const RegisterForm = () => {
           <Input id="workplaceAddress" placeholder="Workplace address" value={workplaceAddress} onChange={(e) => setWorkplaceAddress(e.target.value)} className="w-full" />
         </div>
         <div className="space-y-1 w-full">
-          <Label htmlFor="familyCount">Count of Family Members</Label>
-          <Input id="familyCount" type="number" min="0" value={familyCount} onChange={(e) => setFamilyCount(e.target.value)} className="w-full" />
-        </div>
-        <div className="grid grid-cols-2 gap-6">
-          <div className="space-y-1 w-full">
-            <Label htmlFor="maleAbove18">Male (18-60)</Label>
-            <Input id="maleAbove18" type="number" min="0" value={maleAbove18} onChange={(e) => setMaleAbove18(e.target.value)} className="w-full" />
-          </div>
-          <div className="space-y-1 w-full">
-            <Label htmlFor="maleAbove60">Male (Above 60)</Label>
-            <Input id="maleAbove60" type="number" min="0" value={maleAbove60} onChange={(e) => setMaleAbove60(e.target.value)} className="w-full" />
-          </div>
-          <div className="space-y-1 w-full">
-            <Label htmlFor="maleUnder18">Male (under 18)</Label>
-            <Input id="maleUnder18" type="number" min="0" value={maleUnder18} onChange={(e) => setMaleUnder18(e.target.value)} className="w-full" />
-          </div>
-          <div className="space-y-1 w-full">
-            <Label htmlFor="femaleAbove18">Female (18-60)</Label>
-            <Input id="femaleAbove18" type="number" min="0" value={femaleAbove18} onChange={(e) => setFemaleAbove18(e.target.value)} className="w-full" />
-          </div>
-          <div className="space-y-1 w-full">
-            <Label htmlFor="femaleAbove60">Female (Above 60)</Label>
-            <Input id="femaleAbove60" type="number" min="0" value={femaleAbove60} onChange={(e) => setFemaleAbove60(e.target.value)} className="w-full" />
-          </div>
-          <div className="space-y-1 w-full">
-            <Label htmlFor="femaleUnder18">Female (under 18)</Label>
-            <Input id="femaleUnder18" type="number" min="0" value={femaleUnder18} onChange={(e) => setFemaleUnder18(e.target.value)} className="w-full" />
-          </div>
+          <Label htmlFor="gender">Gender</Label>
+          <Select value={gender} onValueChange={(v) => setGender(v as 'M' | 'F' | '')}>
+            <SelectTrigger id="gender" className="w-full">
+              <SelectValue placeholder="Select gender" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="M">Male</SelectItem>
+              <SelectItem value="F">Female</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <div className="space-y-1 w-full">
           <Label htmlFor="forumContribution">How I can contribute to this forum</Label>

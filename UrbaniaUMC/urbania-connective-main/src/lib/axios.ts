@@ -8,9 +8,23 @@ const envBase = typeof import.meta !== 'undefined' && import.meta.env && (import
   : undefined;
 const fallbackOrigin = (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : 'http://localhost:4000';
 const rawBase = (envBase && envBase.trim() !== '') ? envBase : fallbackOrigin;
-// NOTE: Hardcode API base to the deployed backend to avoid relying on
-// environment configuration in Vercel for now.
-const apiBaseUrl = 'https://urbaniaumcv1-2.onrender.com/api';
+// Determine API base URL. In development (localhost) prefer local backend
+// so the UI talks to your local server; otherwise prefer VITE_API_URL or
+// fall back to the deployed backend.
+const deployedApi = 'https://urbaniaumcv1-2.onrender.com/api';
+let apiBaseUrl: string;
+if (typeof window !== 'undefined') {
+  const hostname = (window.location && window.location.hostname) || '';
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    apiBaseUrl = 'http://localhost:8080/api';
+  } else if (envBase && envBase.trim() !== '') {
+    apiBaseUrl = envBase;
+  } else {
+    apiBaseUrl = deployedApi;
+  }
+} else {
+  apiBaseUrl = envBase || deployedApi;
+}
 // Helpful runtime warnings for deployed environments
 console.log('API base URL (resolved):', apiBaseUrl, '(source:', envBase ? 'VITE_API_URL' : 'window.location.origin/fallback', ')');
 

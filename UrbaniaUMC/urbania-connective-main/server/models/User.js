@@ -141,26 +141,10 @@ const userSchema = new mongoose.Schema({
         type: String,
         trim: true
     },
-    familyCount: {
-        type: Number
-    },
-    maleAbove18: {
-        type: Number
-    },
-    maleAbove60: {
-        type: Number
-    },
-    maleUnder18: {
-        type: Number
-    },
-    femaleAbove18: {
-        type: Number
-    },
-    femaleAbove60: {
-        type: Number
-    },
-    femaleUnder18: {
-        type: Number
+    gender: {
+        type: String,
+        enum: ['M', 'F'],
+        required: false
     },
     forumContribution: {
         type: String,
@@ -173,24 +157,7 @@ const userSchema = new mongoose.Schema({
         required: false
     }
     ,
-    familyMembers: [{
-        name: { type: String, trim: true },
-        email: { type: String, trim: true, lowercase: true },
-        age: { type: Number },
-        category: { type: String, trim: true } // e.g., 'male_18_60', 'female_under_18', etc.
-    }]
-    ,
-    familyOf: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: false
-    },
-    familyCode: {
-        type: String,
-        trim: true,
-        required: false,
-        index: true
-    }
+    
 }, {
     versionKey: false,
     timestamps: true

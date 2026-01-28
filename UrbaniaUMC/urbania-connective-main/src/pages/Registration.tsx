@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { User, Users, UserPlus, IdCard, FileText, Heart, ArrowRight, Calendar, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/authContext";
+import { authAPI } from "@/lib/api";
 
 const registrationTypes = [
   {
@@ -28,21 +29,6 @@ const registrationTypes = [
       "Monthly newsletter subscription",
       "Voting rights at annual general meetings",
       "Priority registration for popular programs"
-    ]
-  },
-  {
-    id: "family",
-    title: "Family Membership",
-    description: "Register your entire family for community membership.",
-    icon: Users,
-    color: "bg-emerald-50 text-emerald-700",
-    price: "₹80 per year",
-    benefits: [
-      "All benefits of individual membership",
-      "Coverage for up to 6 family members",
-      "Additional discounts on children's programs",
-      "Family events access and participation",
-      "Discounted community center services"
     ]
   },
   {
@@ -206,8 +192,12 @@ const Registration = () => {
     city: "",
     state: "",
     zip: "",
+    gender: "" as '' | 'M' | 'F',
+    password: "",
+    birthdate: "",
+    occupationProfile: "",
+    residenceType: "owner",
     eventOrProgram: "",
-    participants: "1",
     specialRequests: "",
     agreeTerms: false
   });
@@ -241,17 +231,44 @@ const Registration = () => {
     setFormData(prev => ({ ...prev, agreeTerms: checked }));
   };
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.gender) {
+      toast.error('Please select a gender.');
+      return;
+    }
+    if (!formData.agreeTerms) {
+      toast.error('Please agree to the Terms and Conditions before submitting.');
+      return;
+    }
     setIsSubmitting(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      toast.success("Registration completed successfully!", {
-        description: "You'll receive a confirmation email shortly."
+
+    try {
+      // Map form fields to match /api/auth/register backend
+      const payload = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        mobile: formData.phone,
+        email: formData.email,
+        password: formData.password,
+        buildingName: formData.address,
+        wing: formData.state,
+        flatNo: formData.zip,
+        birthdate: formData.birthdate,
+        occupationProfile: formData.occupationProfile,
+        workplaceAddress: formData.city,
+        gender: formData.gender,
+        forumContribution: '',
+        residenceType: formData.residenceType,
+      };
+      console.log('Registration payload:', payload);
+      const res = await authAPI.register(payload as any);
+
+      toast.success('Registration completed successfully!', {
+        description: 'You will receive a confirmation email shortly.'
       });
-      
-      // Reset form and navigate to confirmation
+
+      // Reset form and navigate to confirmation or dashboard
       setFormData({
         firstName: "",
         lastName: "",
@@ -261,16 +278,28 @@ const Registration = () => {
         city: "",
         state: "",
         zip: "",
+        gender: "",
+        password: "",
+        birthdate: "",
+        occupationProfile: "",
+        residenceType: "owner",
         eventOrProgram: "",
-        participants: "1",
         specialRequests: "",
         agreeTerms: false
       });
+
+      // Optionally navigate to a confirmation page if API returned registration id
+      if (res && (res.data || res.status === 201)) {
+        navigate('/');
+      } else {
+        navigate('/');
+      }
+    } catch (err: any) {
+      console.error('Registration submit error:', err);
+      toast.error(err?.response?.data?.message || 'Registration failed. Please try again.');
+    } finally {
       setIsSubmitting(false);
-      
-      // Navigate to home page after successful submission
-      navigate("/");
-    }, 1500);
+    }
   };
 
   const handleNextStep = () => {
@@ -430,6 +459,71 @@ const Registration = () => {
                         />
                       </div>
                     </div>
+
+                    <div>
+                      <Label htmlFor="gender">Gender</Label>
+                      <Select
+                        value={formData.gender}
+                        onValueChange={(value) => handleSelectChange('gender', value)}
+                      >
+                        <SelectTrigger id="gender">
+                          <SelectValue placeholder="Select gender" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="M">Male</SelectItem>
+                          <SelectItem value="F">Female</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="password">Password</Label>
+                      <Input
+                        id="password"
+                        name="password"
+                        type="password"
+                        placeholder="Enter a password"
+                        value={formData.password}
+                        onChange={handleChange}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="birthdate">Birthdate</Label>
+                      <Input
+                        id="birthdate"
+                        name="birthdate"
+                        type="date"
+                        value={formData.birthdate}
+                        onChange={handleChange}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="occupationProfile">Occupation</Label>
+                      <Input
+                        id="occupationProfile"
+                        name="occupationProfile"
+                        placeholder="Enter your occupation"
+                        value={formData.occupationProfile}
+                        onChange={handleChange}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="residenceType">Residence Type</Label>
+                      <Select
+                        value={formData.residenceType}
+                        onValueChange={(value) => handleSelectChange('residenceType', value)}
+                      >
+                        <SelectTrigger id="residenceType">
+                          <SelectValue placeholder="Select residence type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="owner">Owner</SelectItem>
+                          <SelectItem value="tenant">Tenant</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                     
                     <div>
                       <Label htmlFor="address">Address</Label>
@@ -509,27 +603,7 @@ const Registration = () => {
                       </div>
                     )}
                     
-                    {(activeType === "membership" || activeType === "family" || activeType === "event") && (
-                      <div>
-                        <Label htmlFor="participants">Number of Participants</Label>
-                        <Select 
-                          value={formData.participants} 
-                          onValueChange={(value) => handleSelectChange('participants', value)}
-                        >
-                          <SelectTrigger id="participants">
-                            <SelectValue placeholder="Select number of participants" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="1">1 Person</SelectItem>
-                            <SelectItem value="2">2 People</SelectItem>
-                            <SelectItem value="3">3 People</SelectItem>
-                            <SelectItem value="4">4 People</SelectItem>
-                            <SelectItem value="5">5 People</SelectItem>
-                            <SelectItem value="6">6+ People</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
+                    {/* participants removed: single registrant only */}
                     
                     <div>
                       <Label htmlFor="specialRequests">Special Requests or Comments</Label>
@@ -575,6 +649,9 @@ const Registration = () => {
                           <p><span className="text-muted-foreground">Name:</span> {formData.firstName} {formData.lastName}</p>
                           <p><span className="text-muted-foreground">Email:</span> {formData.email}</p>
                           <p><span className="text-muted-foreground">Phone:</span> {formData.phone}</p>
+                          {formData.gender && (
+                            <p><span className="text-muted-foreground">Gender:</span> {formData.gender === 'M' ? 'Male' : formData.gender === 'F' ? 'Female' : formData.gender}</p>
+                          )}
                         </div>
                       </div>
                       <div>
@@ -600,14 +677,7 @@ const Registration = () => {
                       </div>
                     )}
                     
-                    {(activeType === "membership" || activeType === "family" || activeType === "event") && (
-                      <div>
-                        <h3 className="font-medium mb-2">Number of Participants</h3>
-                        <div className="bg-accent/50 p-4 rounded-lg">
-                          {formData.participants} {parseInt(formData.participants) === 1 ? "Person" : "People"}
-                        </div>
-                      </div>
-                    )}
+                    {/* participants review removed: single registrant only */}
                     
                     {formData.specialRequests && (
                       <div>

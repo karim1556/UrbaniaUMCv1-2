@@ -6,28 +6,16 @@ const generalRegistrationSchema = new mongoose.Schema({
     // Membership Type
     membershipType: {
         type: String,
-        enum: ['individual', 'family', 'senior', 'student', 'lifetime'],
+        enum: ['individual', 'senior', 'student', 'lifetime'],
         required: true
     },
     
-    // Family Member Details (for family membership)
-    familyMembers: [{
-        firstName: {
-            type: String,
-            trim: true
-        },
-        lastName: {
-            type: String,
-            trim: true
-        },
-        relationship: {
-            type: String,
-            trim: true
-        },
-        age: {
-            type: Number
-        }
-    }],
+    // Optional gender field for the registrant
+    gender: {
+        type: String,
+        enum: ['M', 'F'],
+        required: false
+    },
     
     // Emergency Contact
     emergencyContact: {

@@ -28,16 +28,9 @@ interface User {
   createdAt?: string;
   occupationProfile?: string;
   workplaceAddress?: string;
-  familyCount?: number;
-  maleAbove18?: number;
-  maleAbove60?: number;
-  maleUnder18?: number;
-  femaleAbove18?: number;
-  femaleAbove60?: number;
-  femaleUnder18?: number;
+  gender?: 'M' | 'F';
   forumContribution?: string;
   residenceType?: 'owner' | 'tenant';
-  familyMembers?: Array<{ name?: string; email?: string; age?: number; category?: string }>;
 }
 
 // Define profile update type
@@ -56,16 +49,9 @@ export type ProfileUpdate = {
   flatNo?: string;
   occupationProfile?: string;
   workplaceAddress?: string;
-  familyCount?: number;
-  maleAbove18?: number;
-  maleAbove60?: number;
-  maleUnder18?: number;
-  femaleAbove18?: number;
-  femaleAbove60?: number;
-  femaleUnder18?: number;
   forumContribution?: string;
+  gender?: 'M' | 'F';
   residenceType?: 'owner' | 'tenant';
-  familyMembers?: Array<{ name?: string; email?: string; age?: number; category?: string }>;
 };
 
 // Define password update type
@@ -134,21 +120,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsAuthenticated(true);
         setError(null);
         const data = response.data;
-        // If backend returned owner/member (family member case), keep the member as the primary user
-        // and attach owner under `owner` so UI can show owner's info via `displayUser`.
-        if (data && data.owner && data.member) {
-          const owner = data.owner;
-          const member = data.member;
-          // If owner and member are same record (unexpected), treat as single user
-          if (String(owner._id) === String(member._id)) {
-            setUser(owner as User);
-          } else {
-            const memberWithMeta = { ...member, isFamilyMember: true, owner: owner, memberAccount: { _id: member._id, email: member.email, customId: member.customId } } as any;
-            setUser(memberWithMeta as User);
-          }
-        } else {
-          setUser(data as User);
-        }
+        // Backend returns a single user object (family model removed)
+        setUser(data as User);
       } catch (err) {
         console.error('Error loading user profile:', err);
         setError('Session expired. Please login again.');
@@ -174,23 +147,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const response = await userAPI.getProfile();
       // Only update user if the data is actually different
       const data = response.data;
-      if (data && data.owner && data.member) {
-        const owner = data.owner;
-        const member = data.member;
-        if (String(owner._id) === String(member._id)) {
-          if (!user || JSON.stringify(user) !== JSON.stringify(owner)) {
-            setUser(owner as User);
-          }
-        } else {
-          const memberWithMeta = { ...member, isFamilyMember: true, owner: owner, memberAccount: { _id: member._id, email: member.email, customId: member.customId } } as any;
-          if (!user || JSON.stringify(user) !== JSON.stringify(memberWithMeta)) {
-            setUser(memberWithMeta as User);
-          }
-        }
-      } else {
-        if (!user || JSON.stringify(user) !== JSON.stringify(data)) {
-          setUser(data as User);
-        }
+      if (!user || JSON.stringify(user) !== JSON.stringify(data)) {
+        setUser(data as User);
       }
       setIsAuthenticated(true);
       return true;

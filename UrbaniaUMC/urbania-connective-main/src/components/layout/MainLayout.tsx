@@ -45,17 +45,18 @@ const MainLayout = ({ children }: MainLayoutProps) => {
     let timers: Array<number> = [];
 
     function submitHandler(e: Event) {
-      // schedule a check in 10 seconds
+      // schedule a check in 10 seconds for the actual submitter only
+      const submitter = (e as any).submitter as HTMLButtonElement | undefined | null;
       const t = window.setTimeout(() => {
         try {
-          const disabledButtons = Array.from(document.querySelectorAll<HTMLButtonElement>('button:disabled'));
-          const stuckButtons = disabledButtons.filter(btn => /submitting|creating|processing|deleting|saving/i.test(btn.innerText));
-          if (stuckButtons.length > 0) {
-            stuckButtons.forEach(btn => {
-              btn.disabled = false;
-            });
-            console.warn('Submit watchdog re-enabled', stuckButtons.length, 'button(s)');
-            toast.error('Action may have completed — buttons re-enabled. Check your dashboard or refresh.');
+          if (submitter) {
+            if (submitter.disabled && /submitting|creating|processing|deleting|saving/i.test(submitter.innerText)) {
+              submitter.disabled = false;
+              console.warn('Submit watchdog re-enabled 1 button (submitter)');
+              toast.error('Action may have completed — submit button re-enabled. Check your dashboard or refresh.');
+            }
+          } else {
+            // fallback: if submitter not available, do nothing to avoid re-enabling unrelated buttons
           }
         } catch (err) {
           // ignore

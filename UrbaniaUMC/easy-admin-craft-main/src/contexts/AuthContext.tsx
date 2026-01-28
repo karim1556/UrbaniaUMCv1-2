@@ -91,24 +91,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
-    // Bypassed register for local development — immediately authenticate
+    // Register via API (use real backend) — store token/admin on success
     const register = async (data: RegisterData) => {
         try {
             setError(null);
-
-            const dummyAdmin: Admin = {
-                id: 'dev-admin',
-                firstName: data.firstName || 'Dev',
-                lastName: data.lastName || 'Admin',
-                mobile: data.mobile || '0000000000',
-                email: data.email || 'dev@local',
-                isActive: true,
-            };
-
-            const dummyToken = 'dev-token';
-            localStorage.setItem('token', dummyToken);
-            localStorage.setItem('admin', JSON.stringify(dummyAdmin));
-            setAdmin(dummyAdmin);
+            const response = await authService.register(data);
+            // response contains token and admin
+            if (response.token) {
+                localStorage.setItem('token', response.token);
+            }
+            if (response.admin) {
+                localStorage.setItem('admin', JSON.stringify(response.admin));
+                setAdmin(response.admin);
+            }
         } catch (err: any) {
             setError(err.message);
             throw err;

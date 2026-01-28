@@ -28,6 +28,7 @@ const GeneralRegistration = () => {
     city: "",
     state: "",
     zipCode: "",
+    gender: "",
     
     // Membership details
     membershipType: "individual", // individual, family, senior, student
@@ -39,7 +40,7 @@ const GeneralRegistration = () => {
       phone: "",
       relationship: ""
     },
-    familyMembers: [], // For family memberships
+    // familyMembers removed — independent registrations
     
     // Additional preferences
     interests: "",
@@ -117,6 +118,8 @@ const GeneralRegistration = () => {
         },
         agreeTerms: formData.agreeTerms,
         receiveUpdates: formData.receiveUpdates
+        ,
+        gender: formData.gender as 'M' | 'F'
       };
       
       // First try using the direct API endpoint
@@ -213,6 +216,22 @@ const GeneralRegistration = () => {
                     />
                   </div>
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="gender">Gender</Label>
+                  <Select
+                    value={formData.gender}
+                    onValueChange={(value) => handleSelectChange('gender', value)}
+                  >
+                    <SelectTrigger id="gender">
+                      <SelectValue placeholder="Select gender" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="M">Male</SelectItem>
+                      <SelectItem value="F">Female</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 
                 <div className="space-y-2">
                   <Label htmlFor="address">Address</Label>
@@ -275,7 +294,6 @@ const GeneralRegistration = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="individual">Individual Membership</SelectItem>
-                      <SelectItem value="family">Family Membership</SelectItem>
                       <SelectItem value="senior">Senior Membership</SelectItem>
                       <SelectItem value="student">Student Membership</SelectItem>
                     </SelectContent>

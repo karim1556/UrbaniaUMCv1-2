@@ -6,7 +6,7 @@ const { sendMail, sendMailContact, sendMailResetPassword } = require("../config/
 // Register new user
 const register = async (req, res) => {
     try {
-        const { firstName, middleName, lastName, mobile, email, password, isAdmin, buildingName, wing, flatNo, birthdate, occupationProfile, occupationType, occupationDescription, workplaceAddress, familyCount, maleAbove18, maleAbove60, maleUnder18, femaleAbove18, femaleAbove60, femaleUnder18, forumContribution, residenceType } = req.body;
+        const { firstName, middleName, lastName, mobile, email, password, isAdmin, buildingName, wing, flatNo, birthdate, occupationProfile, occupationType, occupationDescription, workplaceAddress, forumContribution, residenceType, gender } = req.body;
 
         // Validation
         if (!firstName || !lastName || !mobile || !email || !password) {
@@ -37,16 +37,39 @@ const register = async (req, res) => {
             return res.status(400).json({ message: 'Mobile number is already taken' });
         }
 
-        // Generate customId: 'R' (for Rustomjee) + first 2 letters of next word in buildingName (if present, uppercase) + wing (uppercase) + flatNo + first 2 digits of mobile
+        // Require gender for all registrations
+
+        // Require gender for all registrations and normalize to 'M' or 'F' only
+        let genderToken = '';
+        if (!gender) {
+            return res.status(400).json({ message: 'Gender is required (M or F)' });
+        }
+        const g = String(gender).trim().toUpperCase();
+        if (g.startsWith('M')) genderToken = 'M';
+        else if (g.startsWith('F')) genderToken = 'F';
+        else {
+            return res.status(400).json({ message: 'Gender must be M or F' });
+        }
+        // Log the received gender value for debugging
+        console.log('Received gender:', gender);
+        // Log the generated gender token
+        console.log('Generated gender token:', genderToken);
+
+        // Generate customId: 'R' (for Rustomjee) + first 2 letters of next word in buildingName (if present, uppercase) + wing (uppercase) + flatNo + first 2 digits of mobile + gender token (M/F)
         let buildingCode = 'R';
         const buildingWords = (buildingName || '').trim().split(/\s+/);
         if (buildingWords.length > 1 && buildingWords[1].length >= 2) {
             buildingCode += buildingWords[1].substring(0, 2).toUpperCase();
+        } else if (buildingWords[0] && buildingWords[0].length >= 2) {
+            buildingCode += buildingWords[0].substring(0, 2).toUpperCase();
         }
         const wingCode = (wing || '').toUpperCase();
         const flatCode = flatNo || '';
         const mobileCode = (mobile || '').substring(0, 2);
-        let customId = `${buildingCode}${wingCode}${flatCode}${mobileCode}`;
+        // Always append gender token (M/F) at the end
+        let customId = `${buildingCode}${wingCode}${flatCode}${mobileCode}${genderToken}`;
+        console.log('Generated customId:', customId);
+
         // Ensure uniqueness (append a number if needed)
         let uniqueCustomId = customId;
         let suffix = 1;
@@ -56,10 +79,17 @@ const register = async (req, res) => {
         }
         customId = uniqueCustomId;
 
+        // Log the generated customId before checking uniqueness
+        console.log('Generated customId before uniqueness check:', customId);
+
+        // Log the final unique customId
+        console.log('Final unique customId:', customId);
+
         // Compose occupationProfile (backwards-compatible)
         const composedOccupation = occupationType ? `${occupationType}${occupationDescription ? ' - ' + occupationDescription : ''}` : (occupationDescription || occupationProfile || '');
 
-        // Create new user
+        // Create new user (store normalized gender token)
+        console.log('Register: creating user with gender token:', genderToken);
         const user = new User({
             firstName,
             middleName,
@@ -73,13 +103,7 @@ const register = async (req, res) => {
             birthdate,
             occupationProfile: composedOccupation,
             workplaceAddress,
-            familyCount,
-            maleAbove18,
-            maleAbove60,
-            maleUnder18,
-            femaleAbove18,
-            femaleAbove60,
-            femaleUnder18,
+            gender: genderToken,
             forumContribution,
             residenceType,
             roles: isAdmin ? ['user', 'admin'] : ['user'],
@@ -106,7 +130,7 @@ const register = async (req, res) => {
             // Continue with registration even if email fails
         }
 
-        console.log('Registration successful:', { userId: user._id, email: user.email, roles: user.roles });
+        console.log('Registration successful:', { userId: user._id, email: user.email, roles: user.roles, customId: user.customId, gender: user.gender });
 
         res.status(201).json({
             message: 'User registered successfully',
@@ -124,13 +148,7 @@ const register = async (req, res) => {
                 birthdate: user.birthdate,
                 occupationProfile: user.occupationProfile,
                 workplaceAddress: user.workplaceAddress,
-                familyCount: user.familyCount,
-                maleAbove18: user.maleAbove18,
-                maleAbove60: user.maleAbove60,
-                maleUnder18: user.maleUnder18,
-                femaleAbove18: user.femaleAbove18,
-                femaleAbove60: user.femaleAbove60,
-                femaleUnder18: user.femaleUnder18,
+                gender: user.gender,
                 forumContribution: user.forumContribution,
                     residenceType: user.residenceType,
                 roles: user.roles,
@@ -237,41 +255,8 @@ const login = async (req, res) => {
 const getProfile = async (req, res) => {
     try {
         const user = await User.findById(req.user._id).select('-password');
-        // If user has explicit familyOf pointer, return owner+member
-        if (user.familyOf) {
-            const owner = await User.findById(user.familyOf).select('-password');
-            return res.json({ owner, member: user });
-        }
-
-        // Fallback: some family-member accounts were created with a placeholder phone
-        // like `fm_<OWNER_CUSTOMID>_...` (e.g. fm_RAUL105903_4). If so, try to resolve
-        // the owner by the embedded customId and return owner+member so frontend shows
-        // the owner's data consistently.
-        try {
-            const phone = (user.mobile || user.phone || '').toString();
-            if (phone && phone.startsWith('fm_')) {
-                // extract token after fm_
-                const token = phone.substring(3);
-                // token may contain suffixes separated by '_', owner id is usually first part
-                const ownerToken = token.split('_')[0];
-                if (ownerToken) {
-                    // try to find owner by customId first (case-insensitive)
-                    let owner = await User.findOne({ customId: { $regex: `^${ownerToken}$`, $options: 'i' } }).select('-password');
-                    // if not found, try to match by mobile or email stored as ownerToken
-                    if (!owner) {
-                        owner = await User.findOne({ $or: [ { mobile: ownerToken }, { email: ownerToken } ] }).select('-password');
-                    }
-                    if (owner) {
-                        return res.json({ owner, member: user });
-                    }
-                }
-            }
-        } catch (err) {
-            console.error('Error resolving owner from phone token:', err);
-            // fall through to return user
-        }
-
         // Default: return the user document
+            // Return single user object (family model removed)
         res.json(user);
     } catch (error) {
         res.status(500).json({ message: 'Error fetching profile', error: error.message });

@@ -81,68 +81,13 @@ const UserDetails = () => {
                 <div className="flex items-center space-x-2">
                     <Button
                         variant="ghost"
-                        size="icon"
-                        onClick={() => navigate('/admin/users')}
-                    >
-                        <ChevronLeft className="h-5 w-5" />
-                    </Button>
-                    <h1 className="text-3xl font-bold">User Details</h1>
-                </div>
-            </div>
-
-            {/* User Quick Info Card */}
-            <Card>
-                <CardContent className="p-6">
-                    <div className="flex items-center space-x-4">
-                        <Avatar className="h-16 w-16">
-                            <AvatarImage src={user.avatar} />
-                            <AvatarFallback className="bg-primary/10">
-                                {user.firstName?.[0]?.toUpperCase()}{user.lastName?.[0]?.toUpperCase()}
-                            </AvatarFallback>
-                        </Avatar>
-                        <div className="space-y-1">
-                            <h2 className="text-2xl font-bold">{user.firstName} {user.lastName}</h2>
-                            <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                                <Mail className="h-4 w-4" />
-                                <span>{user.email}</span>
+                                <Label htmlFor="gender">Gender</Label>
+                                <select id="gender" defaultValue={user.gender || ''} onChange={(e) => handleUpdateUser({ gender: e.target.value })} className="w-full border rounded px-3 py-2">
+                                    <option value="">Not specified</option>
+                                    <option value="M">Male</option>
+                                    <option value="F">Female</option>
+                                </select>
                             </div>
-                            <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                                <Phone className="h-4 w-4" />
-                                <span>{user.mobile}</span>
-                            </div>
-                            <div className="flex space-x-2">
-                                {user.roles.map((role) => (
-                                    <Badge key={role} variant="outline">
-                                        {role}
-                                    </Badge>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
-
-            {/* Tabs */}
-            <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="space-y-4">
-                <TabsList>
-                    <TabsTrigger value="profile">Profile</TabsTrigger>
-                    <TabsTrigger value="activity">Activity</TabsTrigger>
-                    <TabsTrigger value="permissions">Permissions</TabsTrigger>
-                    <TabsTrigger value="security">Security</TabsTrigger>
-                </TabsList>
-
-                {/* Profile Tab */}
-                <TabsContent value="profile" className="space-y-4">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Profile Information</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="firstName">First Name</Label>
-                                    <Input
-                                        id="firstName"
                                         defaultValue={user.firstName}
                                         onChange={(e) => handleUpdateUser({ firstName: e.target.value })}
                                     />
@@ -190,7 +135,7 @@ const UserDetails = () => {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="occupationProfile">Occupation & Brief Profile</Label>
+                                <Label htmlFor="occupationProfile">Occupation & Other (Please Specify)</Label>
                                 <Input
                                     id="occupationProfile"
                                     defaultValue={user.occupationProfile}
@@ -206,49 +151,12 @@ const UserDetails = () => {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="familyCount">Family Members (Total)</Label>
-                                <Input
-                                    id="familyCount"
-                                    type="number"
-                                    defaultValue={user.familyCount}
-                                    onChange={(e) => handleUpdateUser({ familyCount: Number(e.target.value) })}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Males (18-60)</Label>
-                                <Input
-                                    id="maleAbove18"
-                                    type="number"
-                                    defaultValue={user.maleAbove18}
-                                    onChange={(e) => handleUpdateUser({ maleAbove18: Number(e.target.value) })}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Males (Above 60)</Label>
-                                <Input
-                                    id="maleAbove60"
-                                    type="number"
-                                    defaultValue={user.maleAbove60}
-                                    onChange={(e) => handleUpdateUser({ maleAbove60: Number(e.target.value) })}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Males (Under 18)</Label>
-                                <Input
-                                    id="maleUnder18"
-                                    type="number"
-                                    defaultValue={user.maleUnder18}
-                                    onChange={(e) => handleUpdateUser({ maleUnder18: Number(e.target.value) })}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Females (18-60)</Label>
-                                <Input
-                                    id="femaleAbove18"
-                                    type="number"
-                                    defaultValue={user.femaleAbove18}
-                                    onChange={(e) => handleUpdateUser({ femaleAbove18: Number(e.target.value) })}
-                                />
+                                <Label htmlFor="gender">Gender</Label>
+                                <select id="gender" defaultValue={user.gender || ''} onChange={(e) => handleUpdateUser({ gender: e.target.value })} className="w-full border rounded px-3 py-2">
+                                    <option value="">Not specified</option>
+                                    <option value="M">Male</option>
+                                    <option value="F">Female</option>
+                                </select>
                             </div>
                             <div className="space-y-2">
                                 <Label>Residence Type</Label>

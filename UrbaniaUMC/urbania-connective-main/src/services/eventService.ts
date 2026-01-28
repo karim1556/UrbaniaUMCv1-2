@@ -45,7 +45,7 @@ export const eventService = {
             console.log('API Response:', response.data);
             // Normalize pricing.amount to a number and strip any currency symbols
             const events = response.data.events || [];
-            return events.map(ev => {
+            return events.map((ev: Event) => {
                 try {
                     const amt = (ev.pricing && (ev.pricing as any).amount);
                     if (typeof amt === 'string') {
@@ -63,7 +63,7 @@ export const eventService = {
     getFeaturedEvents: async (): Promise<Event[]> => {
         const response = await api.get('/events/featured');
         const events = response.data || [];
-        return events.map(ev => {
+        return events.map((ev: Event) => {
             try {
                 const amt = (ev.pricing && (ev.pricing as any).amount);
                 if (typeof amt === 'string') {
@@ -79,7 +79,7 @@ export const eventService = {
     getUpcomingEvents: async (): Promise<Event[]> => {
         const response = await api.get('/events/upcoming');
         const events = response.data || [];
-        return events.map(ev => {
+        return events.map((ev: Event) => {
             try {
                 const amt = (ev.pricing && (ev.pricing as any).amount);
                 if (typeof amt === 'string') {
@@ -95,7 +95,7 @@ export const eventService = {
     getEventsByCategory: async (category: string): Promise<Event[]> => {
         const response = await api.get(`/events/category/${category}`);
         const events = response.data || [];
-        return events.map(ev => {
+        return events.map((ev: Event) => {
             try {
                 const amt = (ev.pricing && (ev.pricing as any).amount);
                 if (typeof amt === 'string') {

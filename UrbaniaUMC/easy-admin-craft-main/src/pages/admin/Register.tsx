@@ -17,14 +17,15 @@ const Register = () => {
     email: '',
     password: '',
     confirmPassword: '',
+    gender: '' as '' | 'M' | 'F',
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
   const { register } = useAuth();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target as HTMLInputElement | HTMLSelectElement;
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -61,6 +62,7 @@ const Register = () => {
         mobile: formData.mobile,
         email: formData.email,
         password: formData.password,
+        gender: formData.gender || undefined,
         isAdmin: true // Always set isAdmin to true for admin registration
       });
 
@@ -112,6 +114,14 @@ const Register = () => {
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input id="email" name="email" type="email" placeholder="Enter your email" value={formData.email} onChange={handleChange} required />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="gender">Gender</Label>
+            <select id="gender" name="gender" value={formData.gender} onChange={handleChange} className="w-full rounded-md border p-2">
+              <option value="">Select Gender</option>
+              <option value="M">Male</option>
+              <option value="F">Female</option>
+            </select>
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>

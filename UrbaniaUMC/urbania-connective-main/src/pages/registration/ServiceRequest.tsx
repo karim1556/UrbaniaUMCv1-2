@@ -98,10 +98,10 @@ const ServiceRequest = () => {
       setFormData(prev => ({
         ...prev,
         [parent]: {
-          ...prev[parent as keyof typeof prev],
+          ...((prev as any)[parent] as any),
           [child]: checked
         }
-      }));
+      } as any));
     } else {
       setFormData(prev => ({ ...prev, [name]: checked }));
     }

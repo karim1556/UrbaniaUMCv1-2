@@ -16,6 +16,7 @@ export interface RegisterData {
     email: string;
     password: string;
     isAdmin?: boolean;
+    gender?: string;
 }
 
 export interface LoginCredentials {
