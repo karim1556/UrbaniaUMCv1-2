@@ -134,12 +134,7 @@ const Navbar = () => {
       >
         <div className="container mx-auto px-4 md:px-6 flex items-center justify-between">
           <Link to="/" className="flex items-center space-x-2">
-            <div className="bg-primary rounded-full w-10 h-10 flex items-center justify-center">
-              <span className="arabic text-xl font-bold text-white">ع</span>
-            </div>
-            <span className="font-display text-xl font-semibold tracking-tight hidden md:inline-block">
-              Urbania <span className="text-primary">Connect Community</span>
-            </span>
+            <img src="/images/UrbaniaConnect.png" alt="Urbania Connect" className="h-12 w-auto object-contain" />
           </Link>
 
           {/* Desktop Navigation */}
@@ -314,12 +309,7 @@ const Navbar = () => {
           {/* Mobile Menu Header */}
           <div className="flex items-center justify-between p-4 border-b border-border/20">
             <Link to="/" className="flex items-center space-x-2" onClick={() => setIsOpen(false)}>
-              <div className="bg-primary rounded-full w-8 h-8 flex items-center justify-center">
-                <span className="arabic text-lg font-bold text-white">ع</span>
-              </div>
-              <span className="font-display text-lg font-semibold tracking-tight">
-                Urbania <span className="text-primary">Connect Community</span>
-              </span>
+              <img src="/images/UrbaniaConnect.png" alt="Urbania Connect" className="h-10 w-auto object-contain" />
             </Link>
             <Button
               variant="ghost"
