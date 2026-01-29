@@ -48,7 +48,7 @@ const corsOptions = {
     ];
 
     // Allow the deployed frontend on Vercel
-    allowedOrigins.push('https://urbania-um-cv1-2.vercel.app');
+    allowedOrigins.push('https://urbaniaconnect.com');
 
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
