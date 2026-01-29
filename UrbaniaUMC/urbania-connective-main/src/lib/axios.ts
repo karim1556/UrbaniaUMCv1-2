@@ -25,6 +25,15 @@ if (typeof window !== 'undefined') {
 } else {
   apiBaseUrl = envBase || deployedApi;
 }
+
+// If the resolved apiBaseUrl is just an origin (no path), append '/api'
+try {
+  if (apiBaseUrl && /^https?:\/\/[^\/]+$/.test(apiBaseUrl)) {
+    apiBaseUrl = apiBaseUrl.replace(/\/+$/, '') + '/api';
+  }
+} catch (e) {
+  // ignore
+}
 // Helpful runtime warnings for deployed environments
 console.log('API base URL (resolved):', apiBaseUrl, '(source:', envBase ? 'VITE_API_URL' : 'window.location.origin/fallback', ')');
 
