@@ -18,7 +18,15 @@ const eventRegistrationSchema = new mongoose.Schema({
         type: Date,
         required: true
     },
-    
+
+    // Check-in Code for QR-based event entry
+    checkInCode: {
+        type: String,
+        unique: true,
+        sparse: true,
+        index: true
+    },
+
     // Additional Personal Information
     gender: {
         type: String,
@@ -36,7 +44,7 @@ const eventRegistrationSchema = new mongoose.Schema({
         type: String,
         trim: true
     },
-    
+
     // Guest Information
     guests: [{
         name: {
@@ -49,26 +57,26 @@ const eventRegistrationSchema = new mongoose.Schema({
         },
         // gender removed - we now collect guest names and ages
     }],
-    
-    
+
+
     // Total Attendees
     totalAttendees: {
         type: Number,
         default: 0
     },
-    
+
     // Dietary Preferences/Restrictions
     dietaryRestrictions: {
         type: String,
         trim: true
     },
-    
+
     // Accessibility Requirements
     accessibilityNeeds: {
         type: String,
         trim: true
     },
-    
+
     // Payment Information
     ticketPrice: {
         type: Number,
@@ -108,7 +116,7 @@ const eventRegistrationSchema = new mongoose.Schema({
             type: String
         }
     },
-    
+
     // Check-in Information
     checkedIn: {
         type: Boolean,
@@ -117,7 +125,7 @@ const eventRegistrationSchema = new mongoose.Schema({
     checkInTime: {
         type: Date
     },
-    
+
     // Promotional Code
     promoCode: {
         type: String,
@@ -127,7 +135,7 @@ const eventRegistrationSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
-    
+
     // Communication Preferences
     sendReminders: {
         type: Boolean,
@@ -145,13 +153,13 @@ const eventRegistrationSchema = new mongoose.Schema({
             type: Boolean
         }
     }],
-    
+
     // Additional Questions
     howDidYouHear: {
         type: String,
         trim: true
     },
-    
+
     // For special events: seating preferences, etc.
     preferences: {
         seatingPreference: {
@@ -163,7 +171,7 @@ const eventRegistrationSchema = new mongoose.Schema({
             trim: true
         }]
     },
-    
+
     // Cancellation Information
     cancellationStatus: {
         type: String,
@@ -188,7 +196,7 @@ eventRegistrationSchema.set('discriminatorKey', 'registrationType');
 
 // Create the model using base Registration as the parent
 const EventRegistration = Registration.discriminator(
-    'event', 
+    'event',
     eventRegistrationSchema
 );
 
@@ -197,35 +205,35 @@ const removeProblematicIndex = async () => {
     try {
         const collection = EventRegistration.collection;
         const indexes = await collection.indexes();
-        
+
         // Find and drop the problematic index
-        const problematicIndex = indexes.find(index => 
-            index.key && 
-            index.key.eventId === 1 && 
-            index.key.userId === 1 && 
+        const problematicIndex = indexes.find(index =>
+            index.key &&
+            index.key.eventId === 1 &&
+            index.key.userId === 1 &&
             index.unique === true
         );
-        
+
         if (problematicIndex) {
             console.log('Removing problematic unique index on eventId and userId...');
             await collection.dropIndex(problematicIndex.name);
             console.log('Problematic index removed successfully');
         }
-        
+
         // Also check for any index with event and user fields
-        const eventUserIndex = indexes.find(index => 
-            index.key && 
-            index.key.event === 1 && 
-            index.key.user === 1 && 
+        const eventUserIndex = indexes.find(index =>
+            index.key &&
+            index.key.event === 1 &&
+            index.key.user === 1 &&
             index.unique === true
         );
-        
+
         if (eventUserIndex) {
             console.log('Removing problematic unique index on event and user...');
             await collection.dropIndex(eventUserIndex.name);
             console.log('Event-user unique index removed successfully');
         }
-        
+
     } catch (error) {
         console.log('No problematic indexes found or error removing them:', error.message);
     }

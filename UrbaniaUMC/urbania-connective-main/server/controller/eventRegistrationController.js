@@ -12,6 +12,30 @@ const { getEventRegistrationReceiptHtml } = require('../utils/emailTemplates');
 
 
 
+// Generate unique check-in code for event registration
+const generateCheckInCode = async () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Excluded I, O, 0, 1 to avoid confusion
+    let code;
+    let isUnique = false;
+
+    while (!isUnique) {
+        // Generate 6 random characters
+        let randomPart = '';
+        for (let i = 0; i < 6; i++) {
+            randomPart += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        code = `EVT-${randomPart}`;
+
+        // Check if code already exists
+        const existing = await EventRegistration.findOne({ checkInCode: code });
+        if (!existing) {
+            isUnique = true;
+        }
+    }
+
+    return code;
+};
+
 // Create a new event registration
 const createEventRegistration = async (req, res) => {
     try {
@@ -25,7 +49,7 @@ const createEventRegistration = async (req, res) => {
             // Payment information
             ticketPrice, totalAmount, paymentInfo,
             // New fields
-                gender, buildingName, wing, flatNo, guests,
+            gender, buildingName, wing, flatNo, guests,
             // Terms
             agreeTerms
         } = req.body;
@@ -167,6 +191,10 @@ const createEventRegistration = async (req, res) => {
             return res.status(400).json({ message: `Not enough spots available. Only ${spotsLeft} spot(s) left.` });
         }
 
+        // Generate unique check-in code for QR-based entry
+        const checkInCode = await generateCheckInCode();
+        registrationData.checkInCode = checkInCode;
+
         // Create registration
         const registration = new EventRegistration(registrationData);
         await registration.save();
@@ -199,7 +227,8 @@ const createEventRegistration = async (req, res) => {
                 id: registration._id,
                 eventName: registration.eventName,
                 status: registration.status,
-                totalAmount: registration.totalAmount
+                totalAmount: registration.totalAmount,
+                checkInCode: registration.checkInCode
             }
         });
 
@@ -505,7 +534,7 @@ const getEventStats = async (req, res) => {
             {
                 $group: {
                     _id: '$event',
-                    guestsCount: { $sum: { $cond: [ { $isArray: '$guests' }, { $size: '$guests' }, 0 ] } }
+                    guestsCount: { $sum: { $cond: [{ $isArray: '$guests' }, { $size: '$guests' }, 0] } }
                 }
             }
         ]);
@@ -570,10 +599,10 @@ const getEventStats = async (req, res) => {
 
 // Helper to sanitize description for Razorpay
 function sanitizeDescription(description) {
-  let sanitized = description.replace(/[^\x00-\x7F]/g, ""); // Remove non-ASCII
-  sanitized = sanitized.replace(/[\r\n]+/g, " "); // Replace line breaks with space
-  sanitized = sanitized.trim().slice(0, 255); // Limit length
-  return sanitized;
+    let sanitized = description.replace(/[^\x00-\x7F]/g, ""); // Remove non-ASCII
+    sanitized = sanitized.replace(/[\r\n]+/g, " "); // Replace line breaks with space
+    sanitized = sanitized.trim().slice(0, 255); // Limit length
+    return sanitized;
 }
 
 // Create Razorpay order for event registration
@@ -655,12 +684,94 @@ const getMyEventRegistrations = async (req, res) => {
                 },
                 status: reg.status,
                 totalAmount: reg.totalAmount,
-                checkedIn: reg.checkedIn
+                checkedIn: reg.checkedIn,
+                checkInCode: reg.checkInCode
             }))
         });
     } catch (error) {
         console.error('Get my event registrations error:', error);
         res.status(500).json({ message: 'Error fetching your event registrations', error: error.message });
+    }
+};
+
+// Check in attendee by code (for QR scanning)
+const checkInByCode = async (req, res) => {
+    try {
+        const { code, eventId } = req.body;
+
+        // Validate inputs
+        if (!code) {
+            return res.status(400).json({ message: 'Check-in code is required' });
+        }
+
+        // Find registration by code
+        const filter = { checkInCode: code.toUpperCase() };
+
+        // If eventId provided, validate it matches
+        if (eventId && validateObjectId(eventId)) {
+            filter.event = new mongoose.Types.ObjectId(eventId);
+        }
+
+        const registration = await EventRegistration.findOne(filter)
+            .populate('event', 'title dateTime');
+
+        if (!registration) {
+            return res.status(404).json({
+                message: eventId
+                    ? 'Invalid check-in code for this event'
+                    : 'Invalid check-in code'
+            });
+        }
+
+        // Check if already checked in
+        if (registration.checkedIn) {
+            return res.status(400).json({
+                message: 'Attendee already checked in',
+                registration: {
+                    id: registration._id,
+                    name: `${registration.firstName} ${registration.lastName}`,
+                    eventName: registration.eventName,
+                    eventDate: registration.eventDate,
+                    checkInTime: registration.checkInTime,
+                    totalAttendees: registration.totalAttendees || 1
+                }
+            });
+        }
+
+        // Check if registration is approved/active
+        if (registration.status === 'rejected' || registration.status === 'cancelled') {
+            return res.status(400).json({
+                message: `Cannot check in - registration is ${registration.status}`,
+                registration: {
+                    id: registration._id,
+                    name: `${registration.firstName} ${registration.lastName}`,
+                    status: registration.status
+                }
+            });
+        }
+
+        // Update check-in status
+        registration.checkedIn = true;
+        registration.checkInTime = new Date();
+        await registration.save();
+
+        res.status(200).json({
+            message: 'Check-in successful!',
+            registration: {
+                id: registration._id,
+                name: `${registration.firstName} ${registration.lastName}`,
+                email: registration.email,
+                phone: registration.phone,
+                eventName: registration.eventName,
+                eventDate: registration.eventDate,
+                checkInTime: registration.checkInTime,
+                totalAttendees: registration.totalAttendees || 1,
+                guests: registration.guests || []
+            }
+        });
+    } catch (error) {
+        console.error('Check in by code error:', error);
+        res.status(500).json({ message: 'Error processing check-in', error: error.message });
     }
 };
 
@@ -672,5 +783,6 @@ module.exports = {
     getEventStats,
     createEventRegistrationPaymentOrder,
     getEventRegistrationsByEventId,
-    getMyEventRegistrations
+    getMyEventRegistrations,
+    checkInByCode
 };

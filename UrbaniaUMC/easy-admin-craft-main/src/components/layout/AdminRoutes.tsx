@@ -21,6 +21,7 @@ const AddUser = React.lazy(() => import('../../pages/admin/AddUser'));
 const EventAttendees = React.lazy(() => import('../../pages/admin/EventAttendees'));
 const EventAttendeeDetails = React.lazy(() => import('../../pages/admin/EventAttendeeDetails'));
 const EditUser = React.lazy(() => import('../../pages/admin/EditUser'));
+const CheckIn = React.lazy(() => import('../../pages/admin/CheckIn'));
 
 // Fallback loading component
 const PageLoading = () => (
@@ -58,6 +59,7 @@ const AdminRoutes = () => {
           <Route path="events" element={<Events />} />
           <Route path="events/:id/attendees" element={<EventAttendees />} />
           <Route path="events/:eventId/attendees/:registrationId" element={<EventAttendeeDetails />} />
+          <Route path="check-in" element={<CheckIn />} />
 
           {/* Form management */}
           <Route path="forms" element={<Forms />} />

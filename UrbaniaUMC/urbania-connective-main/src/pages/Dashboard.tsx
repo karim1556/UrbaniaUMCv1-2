@@ -32,6 +32,7 @@ import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import EventRegistrationDetails from "@/components/events/EventRegistrationDetails";
+import { QRCodeSVG } from "qrcode.react";
 
 type Donation = {
   _id: string;
@@ -101,6 +102,7 @@ type EventRegistration = {
   };
   status: 'pending' | 'approved' | 'rejected';
   checkedIn: boolean;
+  checkInCode?: string;
 };
 
 type BadgeVariant = 'default' | 'secondary' | 'destructive' | 'outline' | 'success';
@@ -159,7 +161,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchDonations = async () => {
       if (!user?._id) return;
-      
+
       try {
         setLoadingDonations(true);
         const response = await donationAPI.getMyDonations();
@@ -168,7 +170,7 @@ const Dashboard = () => {
 
         // Calculate donation stats - all donations are completed now
         const total = userDonations.reduce((sum: number, donation: Donation) => sum + donation.amount, 0);
-        
+
         setDonationStats({
           totalAmount: total,
           totalDonations: userDonations.length,
@@ -184,7 +186,7 @@ const Dashboard = () => {
 
     const fetchVolunteerProfile = async () => {
       if (!user?._id) return;
-      
+
       try {
         setLoadingVolunteer(true);
         const response = await volunteerAPI.getMyVolunteerProfile();
@@ -221,7 +223,7 @@ const Dashboard = () => {
         const res = await userAPI.getAllUsers();
         const all = res.data?.data || res.data || [];
         // Defensive filter: remove admin users if present
-        const filtered = Array.isArray(all) ? all.filter((u:any) => !(u.roles && Array.isArray(u.roles) && u.roles.includes('admin'))) : [];
+        const filtered = Array.isArray(all) ? all.filter((u: any) => !(u.roles && Array.isArray(u.roles) && u.roles.includes('admin'))) : [];
         setNetworkUsers(filtered || []);
       } catch (err) {
         console.error('Error fetching network users:', err);
@@ -297,7 +299,8 @@ const Dashboard = () => {
       location: reg.event?.location,
       status: reg.status,
       statusDisplay: getRegistrationStatus(reg.status),
-      checkedIn: reg.checkedIn
+      checkedIn: reg.checkedIn,
+      checkInCode: reg.checkInCode
     }));
 
   const pastEvents = myEventRegistrations
@@ -335,15 +338,15 @@ const Dashboard = () => {
         {/* User Header */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
           <div className="flex items-center space-x-4">
-              <Avatar className="h-16 w-16 border-2 border-primary/10">
-                <AvatarImage src={user?.avatar} />
-                <AvatarFallback className="bg-primary text-primary-foreground text-3xl">
-                  {getInitials(user?.email)}
-                </AvatarFallback>
+            <Avatar className="h-16 w-16 border-2 border-primary/10">
+              <AvatarImage src={user?.avatar} />
+              <AvatarFallback className="bg-primary text-primary-foreground text-3xl">
+                {getInitials(user?.email)}
+              </AvatarFallback>
             </Avatar>
             <div>
-                <h1 className="text-2xl font-semibold">Welcome{user?.firstName ? `, ${user.firstName}` : ''}</h1>
-                <p className="text-muted-foreground">{user?.email}</p>
+              <h1 className="text-2xl font-semibold">Welcome{user?.firstName ? `, ${user.firstName}` : ''}</h1>
+              <p className="text-muted-foreground">{user?.email}</p>
             </div>
           </div>
           <div className="flex space-x-2 w-full md:w-auto">
@@ -476,7 +479,7 @@ const Dashboard = () => {
                     <div className="text-sm text-muted-foreground">No users found.</div>
                   ) : (
                     <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
-                      {networkUsers.slice(0,4).map((u:any)=> (
+                      {networkUsers.slice(0, 4).map((u: any) => (
                         <div key={u._id || u.id} className="flex items-center justify-between p-3 border rounded bg-white">
                           <div>
                             <div className="font-medium">{(u.firstName || u.name) ? `${u.firstName || ''} ${u.lastName || ''}`.trim() : (u.name || '—')}</div>
@@ -489,7 +492,7 @@ const Dashboard = () => {
                         </div>
                       ))}
                       <div className="mt-2 text-center">
-                        <div className="text-xs text-muted-foreground mb-2">Showing {Math.min(networkUsers.length,4)} of {networkUsers.length}</div>
+                        <div className="text-xs text-muted-foreground mb-2">Showing {Math.min(networkUsers.length, 4)} of {networkUsers.length}</div>
                         <div className="flex justify-center gap-2">
                           <Button asChild>
                             <Link to="/network">View all network</Link>
@@ -667,8 +670,8 @@ const Dashboard = () => {
                 ) : upcomingEvents.length > 0 ? (
                   <div className="space-y-4">
                     {upcomingEvents.map(event => (
-                      <div key={event.registrationId} className="flex justify-between items-center p-4 border rounded-lg hover:bg-accent/50 transition-colors">
-                        <div className="flex items-center space-x-4">
+                      <div key={event.registrationId} className="flex flex-col md:flex-row justify-between items-start md:items-center p-4 border rounded-lg hover:bg-accent/50 transition-colors gap-4">
+                        <div className="flex items-center space-x-4 flex-1">
                           <div className="bg-primary/10 p-3 rounded-full">
                             <Calendar className="h-5 w-5 text-primary" />
                           </div>
@@ -702,9 +705,24 @@ const Dashboard = () => {
                             </div>
                           </div>
                         </div>
+
+                        {/* QR Code Section - Only show for approved events not yet checked in */}
+                        {event.checkInCode && !event.checkedIn && (
+                          <div className="flex flex-col items-center bg-white p-3 rounded-lg border shadow-sm">
+                            <QRCodeSVG
+                              value={event.checkInCode}
+                              size={100}
+                              level="M"
+                              includeMargin={false}
+                            />
+                            <p className="text-xs font-mono mt-2 text-center font-semibold">{event.checkInCode}</p>
+                            <p className="text-xs text-muted-foreground text-center">Show this at entry</p>
+                          </div>
+                        )}
+
                         <div className="flex gap-2">
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             size="sm"
                             onClick={() => {
                               setSelectedRegistrationId(event.registrationId);
@@ -847,7 +865,7 @@ const Dashboard = () => {
                                 <p className="text-xs">Applied: {formatDate(v.applicationDate)}</p>
                               </div>
                               <div className="flex flex-col items-end gap-2">
-                              <Badge>{v.status.charAt(0).toUpperCase() + v.status.slice(1)}</Badge>
+                                <Badge>{v.status.charAt(0).toUpperCase() + v.status.slice(1)}</Badge>
                                 <Button variant="outline" size="sm" onClick={() => { setSelectedVolunteer(v); setVolunteerDialogOpen(true); }}>
                                   View Details
                                 </Button>

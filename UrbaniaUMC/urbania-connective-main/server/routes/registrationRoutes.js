@@ -35,7 +35,8 @@ const {
     getEventStats,
     createEventRegistrationPaymentOrder,
     getEventRegistrationsByEventId,
-    getMyEventRegistrations
+    getMyEventRegistrations,
+    checkInByCode
 } = require('../controller/eventRegistrationController');
 
 const {
@@ -129,6 +130,7 @@ router.get('/event/my', auth, getMyEventRegistrations);
 router.get('/event', auth, getEventRegistrationsByEventId);
 router.put('/event/:id', auth, updateEventRegistration);
 router.put('/event/:id/check-in', auth, checkRole(['admin']), checkInAttendee);
+router.post('/event/check-in-by-code', auth, checkRole(['admin']), checkInByCode);
 
 // Service Request routes
 router.get('/service/stats', auth, checkRole(['admin']), getServiceStats);

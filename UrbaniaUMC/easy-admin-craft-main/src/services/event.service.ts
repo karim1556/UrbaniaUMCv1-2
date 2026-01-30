@@ -224,4 +224,36 @@ export const eventService = {
         const response = await api.get(`/api/registrations/${registrationId}`);
         return response.data;
     },
+
+    // Check in attendee by code (for QR scanning)
+    checkInByCode: async (code: string, eventId?: string) => {
+        try {
+            const response = await api.post('/api/registrations/event/check-in-by-code', {
+                code,
+                eventId
+            });
+            return response.data;
+        } catch (error: any) {
+            // Re-throw with the error message from the server
+            throw new Error(error.response?.data?.message || 'Check-in failed');
+        }
+    },
+
+    // Get event registration stats
+    getEventStats: async (eventId?: string) => {
+        const params = eventId ? `?eventId=${eventId}` : '';
+        const response = await api.get(`/api/registrations/event/stats${params}`);
+        return response.data;
+    },
+
+    // Get all event registrations (for admin)
+    getAllEventRegistrations: async (eventId?: string, page = 1, limit = 50) => {
+        const params = new URLSearchParams();
+        params.append('page', page.toString());
+        params.append('limit', limit.toString());
+        if (eventId) params.append('eventId', eventId);
+
+        const response = await api.get(`/api/registrations/event?${params.toString()}`);
+        return response.data;
+    }
 }; 

@@ -17,7 +17,8 @@ import {
   BookOpen,
   HandHelping,
   PhoneCall,
-  IndianRupee
+  IndianRupee,
+  QrCode
 } from 'lucide-react';
 
 // Menu items based on the flow diagrams
@@ -25,6 +26,7 @@ const menuItems = [
   { title: "Dashboard", path: "/admin", icon: Home },
   { title: "User Management", path: "/admin/users", icon: Users },
   { title: "Events", path: "/admin/events", icon: Calendar },
+  { title: "Event Check-in", path: "/admin/check-in", icon: QrCode },
   { title: "Services", path: "/admin/services", icon: HandHelping },
   { title: "Requests", path: "/admin/requests", icon: PhoneCall },
   { title: "Education", path: "/admin/education", icon: BookOpen },
