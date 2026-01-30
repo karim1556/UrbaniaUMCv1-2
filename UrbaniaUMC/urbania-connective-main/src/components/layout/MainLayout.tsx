@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { Toaster, toast } from "sonner";
+import { Toaster } from "sonner";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 
@@ -13,7 +13,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
 
   useEffect(() => {
     setLoaded(true);
-    
+
     // Intersection Observer for fade-in sections
     const observer = new IntersectionObserver(
       (entries) => {
@@ -38,40 +38,9 @@ const MainLayout = ({ children }: MainLayoutProps) => {
     };
   }, []);
 
-  // Submit watchdog: if a form submit disables a button and it remains disabled
-  // for too long (e.g., network hiccup or navigation race), re-enable it and
-  // notify the user so the UI doesn't appear permanently stuck.
-  useEffect(() => {
-    let timers: Array<number> = [];
-
-    function submitHandler(e: Event) {
-      // schedule a check in 10 seconds for the actual submitter only
-      const submitter = (e as any).submitter as HTMLButtonElement | undefined | null;
-      const t = window.setTimeout(() => {
-        try {
-          if (submitter) {
-            if (submitter.disabled && /submitting|creating|processing|deleting|saving/i.test(submitter.innerText)) {
-              submitter.disabled = false;
-              console.warn('Submit watchdog re-enabled 1 button (submitter)');
-              toast.error('Action may have completed — submit button re-enabled. Check your dashboard or refresh.');
-            }
-          } else {
-            // fallback: if submitter not available, do nothing to avoid re-enabling unrelated buttons
-          }
-        } catch (err) {
-          // ignore
-        }
-      }, 10000);
-      timers.push(t);
-    }
-
-    document.addEventListener('submit', submitHandler, true);
-
-    return () => {
-      document.removeEventListener('submit', submitHandler, true);
-      timers.forEach(t => clearTimeout(t));
-    };
-  }, []);
+  // Submit watchdog removed - it was causing false error toasts when API calls
+  // take longer than 10 seconds (e.g., when sending emails). The actual API
+  // error handling should be done in individual form components.
 
   return (
     <div className={`min-h-screen flex flex-col ${loaded ? "opacity-100" : "opacity-0"} transition-opacity duration-500`}>

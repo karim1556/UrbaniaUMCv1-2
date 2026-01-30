@@ -5,7 +5,7 @@ const normalizedBase = rawBase.endsWith('/api') ? rawBase : rawBase.replace(/\/+
 
 const api = axios.create({
   baseURL: normalizedBase,
-  timeout: 10000,
+  timeout: 60000, // 60 seconds to allow for email sending and other operations
   headers: {
     'Content-Type': 'application/json',
   }

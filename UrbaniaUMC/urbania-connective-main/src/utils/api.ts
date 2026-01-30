@@ -3,7 +3,7 @@ import { getAuthData, clearAuthData } from './auth';
 
 const api = axios.create({
   baseURL: '',  // Empty base URL since we're using the full path in the service
-  timeout: 10000,
+  timeout: 60000, // 60 seconds to allow for email sending and other operations
   headers: {
     'Content-Type': 'application/json',
   }
@@ -13,7 +13,7 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const { token, isAdmin } = getAuthData();
-    
+
     console.log('Making request:', {
       url: config.url,
       method: config.method,
@@ -21,7 +21,7 @@ api.interceptors.request.use(
       isAdmin,
       headers: config.headers
     });
-    
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     } else {
