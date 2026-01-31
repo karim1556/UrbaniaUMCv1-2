@@ -3,6 +3,17 @@ require('dotenv').config();
 const { getEventRegistrationReceiptHtml, getDonationReceiptHtml } = require('../utils/emailTemplates');
 
 const createTransporter = () => {
+  // Log credential status for debugging (without exposing actual values)
+  const hasUser = !!process.env.GMAIL_USER;
+  const hasPass = !!process.env.GMAIL_APP_PASS;
+
+  if (!hasUser || !hasPass) {
+    console.error('⚠️ EMAIL CONFIG MISSING:', {
+      GMAIL_USER: hasUser ? 'SET' : 'MISSING',
+      GMAIL_APP_PASS: hasPass ? 'SET' : 'MISSING'
+    });
+  }
+
   return nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -24,6 +35,8 @@ const retry = async (fn, retries = 3, delay = 1000) => {
 };
 
 const sendMail = async (email, subject, html) => {
+  console.log('📧 Attempting to send email to:', email);
+
   const transporter = createTransporter();
   const mailOptions = {
     from: `Urbania Connective <${process.env.GMAIL_USER}>`,
@@ -32,10 +45,22 @@ const sendMail = async (email, subject, html) => {
     html: html
   };
 
-  await retry(async () => {
-    await transporter.sendMail(mailOptions);
-    console.log(`Email sent to ${email}`);
-  });
+  try {
+    await retry(async () => {
+      await transporter.sendMail(mailOptions);
+      console.log(`✅ Email sent successfully to ${email}`);
+    });
+  } catch (error) {
+    console.error('❌ EMAIL SEND FAILED:', {
+      to: email,
+      subject: subject,
+      errorCode: error.code,
+      errorMessage: error.message,
+      errorResponse: error.response,
+      fullError: error.toString()
+    });
+    throw error;
+  }
 };
 
 const sendMailContact = async (email, name, phoneNo, subject, message) => {
