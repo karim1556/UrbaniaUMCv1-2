@@ -15,19 +15,19 @@ const createCourseRegistration = async (req, res) => {
     await registration.save();
     console.log('Course registration saved:', { id: registration._id, email, name, courseId, courseTitle });
 
-    // Fire-and-forget: send email without blocking the response
-    // This prevents the form from stalling if email service is slow
-    try {
-      sendMailEducationRegistration(email, name, courseTitle)
-        .then(() => console.log(`Education registration email sent to ${email}`))
-        .catch((emailError) => console.error(`Failed to send education registration email:`, emailError));
-    } catch (emailSetupError) {
-      console.error('Error setting up education email:', emailSetupError);
-    }
-
     // Log before sending response
     console.log('Sending registration response for:', registration._id);
     res.status(201).json({ message: 'Registration successful.' });
+
+    // Send email AFTER response (using setImmediate to ensure it runs in next tick)
+    setImmediate(async () => {
+      try {
+        await sendMailEducationRegistration(email, name, courseTitle);
+        console.log(`Education registration email sent to ${email}`);
+      } catch (emailError) {
+        console.error(`Failed to send education registration email:`, emailError);
+      }
+    });
   } catch (err) {
     res.status(500).json({ message: 'Server error.', error: err.message });
   }

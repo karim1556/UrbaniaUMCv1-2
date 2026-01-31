@@ -443,17 +443,17 @@ const createUser = async (req, res) => {
         // Send response immediately, don't wait for email
         res.status(201).json(userObj);
 
-        // Fire-and-forget: send credentials email without blocking
-        // This prevents the form from stalling if email service is slow
-        try {
-            const fullName = `${firstName} ${lastName}`;
-            const { sendCredentialsEmail } = require('../config/mail');
-            sendCredentialsEmail(email, fullName, user.customId, password)
-                .then(() => console.log('Credentials email sent to:', email))
-                .catch((emailError) => console.error('Failed to send credentials email to created user:', emailError));
-        } catch (emailSetupError) {
-            console.error('Error setting up credentials email:', emailSetupError);
-        }
+        // Send email AFTER response (using setImmediate to ensure it runs in next tick)
+        setImmediate(async () => {
+            try {
+                const fullName = `${firstName} ${lastName}`;
+                const { sendCredentialsEmail } = require('../config/mail');
+                await sendCredentialsEmail(email, fullName, user.customId, password);
+                console.log('Credentials email sent to:', email);
+            } catch (emailError) {
+                console.error('Failed to send credentials email to created user:', emailError);
+            }
+        });
     } catch (error) {
         console.error('Error creating user:', error);
         res.status(500).json({ message: 'Error creating user', error: error.message });
