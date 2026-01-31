@@ -64,9 +64,9 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
   withCredentials: true,
-  // Remove client-side timeout so we don't abort requests while the server
-  // is processing. Server-side timeouts should be enforced by the API.
-  timeout: 0,
+  // 60 second timeout - long enough for normal operations but prevents indefinite hangs
+  // If a request takes longer than 60 seconds, something is wrong on the server side
+  timeout: 60000,
 });
 
 // Request interceptor
@@ -93,7 +93,7 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    
+
     // Add timestamp to avoid caching issues
     if (config.method === 'get') {
       config.params = {
@@ -101,13 +101,13 @@ api.interceptors.request.use(
         _t: new Date().getTime()
       };
     }
-    
+
     // Special handling for registration endpoints
     if (config.url?.includes('/registrations/')) {
       console.log('📝 Registration request detected:', config.url);
       console.log('📝 Registration data:', JSON.stringify(config.data, null, 2));
     }
-    
+
     // Log the request details with computed absolute URL
     console.log(`API Request: ${config.method?.toUpperCase()} ${(config as any).__fullRequestUrl || (config.baseURL + config.url)}`, {
       url: config.url,
@@ -116,7 +116,7 @@ api.interceptors.request.use(
       data: config.data ? 'DATA_PRESENT' : 'NO_DATA', // Don't log full data for privacy
       params: config.params
     });
-    
+
     return config;
   },
   (error) => {
@@ -134,12 +134,12 @@ api.interceptors.response.use(
       statusText: response.statusText,
       dataReceived: response.data ? 'DATA_RECEIVED' : 'NO_DATA'
     });
-    
+
     // Special handling for registration responses
     if (response.config.url?.includes('/registrations/')) {
       console.log('📝 Registration response:', JSON.stringify(response.data, null, 2));
     }
-    
+
     return response;
   },
   (error) => {
@@ -154,12 +154,12 @@ api.interceptors.response.use(
         method: error.config?.method,
         data: error.response.data
       });
-      
+
       // Special handling for registration errors
       if (error.config?.url?.includes('/registrations/')) {
         console.error('📝 Registration error details:', error.response.data);
       }
-      
+
       // Handle specific error codes
       if (error.response.status === 401) {
         console.error('Authentication error - redirecting to login');
@@ -171,7 +171,7 @@ api.interceptors.response.use(
       } else if (error.response.status === 500) {
         console.error('Server error');
       }
-      
+
       // Return a more user-friendly error message if available
       if (error.response.data && error.response.data.message) {
         error.userMessage = error.response.data.message;
@@ -209,7 +209,7 @@ api.interceptors.response.use(
       console.error('API Setup Error:', error.message);
       error.userMessage = 'Error setting up request. Please try again later.';
     }
-    
+
     return Promise.reject(error);
   }
 );

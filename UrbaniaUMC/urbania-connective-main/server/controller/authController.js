@@ -120,14 +120,18 @@ const register = async (req, res) => {
             { expiresIn: '24h' }
         );
 
-        // Try to send credentials email, but don't block registration if it fails
+        // Fire-and-forget: send credentials email without blocking the response
+        // This prevents the registration form from stalling if email service is slow
         try {
             const fullName = `${firstName} ${lastName}`;
             const { sendCredentialsEmail } = require('../config/mail');
-            await sendCredentialsEmail(email, fullName, user.customId, password);
-        } catch (emailError) {
-            console.error('Failed to send credentials email:', emailError);
-            // Continue with registration even if email fails
+            // Don't await - let it run in background
+            sendCredentialsEmail(email, fullName, user.customId, password)
+                .then(() => console.log('Credentials email sent successfully to:', email))
+                .catch((emailError) => console.error('Failed to send credentials email:', emailError));
+        } catch (emailSetupError) {
+            console.error('Error setting up credentials email:', emailSetupError);
+            // Continue with registration response
         }
 
         console.log('Registration successful:', { userId: user._id, email: user.email, roles: user.roles, customId: user.customId, gender: user.gender });
@@ -150,7 +154,7 @@ const register = async (req, res) => {
                 workplaceAddress: user.workplaceAddress,
                 gender: user.gender,
                 forumContribution: user.forumContribution,
-                    residenceType: user.residenceType,
+                residenceType: user.residenceType,
                 roles: user.roles,
                 customId: user.customId
             },
@@ -256,7 +260,7 @@ const getProfile = async (req, res) => {
     try {
         const user = await User.findById(req.user._id).select('-password');
         // Default: return the user document
-            // Return single user object (family model removed)
+        // Return single user object (family model removed)
         res.json(user);
     } catch (error) {
         res.status(500).json({ message: 'Error fetching profile', error: error.message });

@@ -55,7 +55,7 @@ const getProfile = async (req, res) => {
 // Update user profile
 const updateProfile = async (req, res) => {
     try {
-            // Family/member concepts removed — proceed with profile update
+        // Family/member concepts removed — proceed with profile update
         const {
             name, phone, address, birthdate, bio,
             firstName, middleName, lastName, buildingName, wing, flatNo,
@@ -226,36 +226,36 @@ const exportUsersCSV = async (req, res) => {
         if (!req.user.roles.includes('admin')) {
             return res.status(403).json({ message: 'Access denied. Admin only.' });
         }
-            const users = await User.find({}).select('-password -__v');
-            // Map users to a clean, admin-friendly row format
-            const rows = users.map(u => {
-                const o = u.toObject ? u.toObject() : u;
-                return {
-                    'User ID': o.customId || o._id,
-                    'Name': `${o.firstName || ''} ${o.lastName || ''}`.trim(),
-                    'Mobile': o.mobile || '',
-                    'Email': o.email || '',
-                    'Phone': o.phone || '',
-                    'Roles': Array.isArray(o.roles) ? o.roles.join('; ') : (o.roles || ''),
-                    'Status': o.status || '',
-                    'Created At': o.createdAt ? new Date(o.createdAt).toISOString() : '',
-                    'Address': [o.buildingName, o.wing, o.flatNo, o.address].filter(Boolean).join(', '),
-                    'Residence Type': o.residenceType || '',
-                    'Organization': o.organization || ''
-                };
-            });
+        const users = await User.find({}).select('-password -__v');
+        // Map users to a clean, admin-friendly row format
+        const rows = users.map(u => {
+            const o = u.toObject ? u.toObject() : u;
+            return {
+                'User ID': o.customId || o._id,
+                'Name': `${o.firstName || ''} ${o.lastName || ''}`.trim(),
+                'Mobile': o.mobile || '',
+                'Email': o.email || '',
+                'Phone': o.phone || '',
+                'Roles': Array.isArray(o.roles) ? o.roles.join('; ') : (o.roles || ''),
+                'Status': o.status || '',
+                'Created At': o.createdAt ? new Date(o.createdAt).toISOString() : '',
+                'Address': [o.buildingName, o.wing, o.flatNo, o.address].filter(Boolean).join(', '),
+                'Residence Type': o.residenceType || '',
+                'Organization': o.organization || ''
+            };
+        });
 
-            const fields = [
-                'User ID', 'Name', 'Mobile', 'Email', 'Phone', 'Roles', 'Status', 'Created At', 'Address', 'Residence Type', 'Organization'
-            ];
+        const fields = [
+            'User ID', 'Name', 'Mobile', 'Email', 'Phone', 'Roles', 'Status', 'Created At', 'Address', 'Residence Type', 'Organization'
+        ];
 
-            const parser = new Parser({ fields, quote: '"' });
-            const csv = parser.parse(rows);
-            res.header('Content-Type', 'text/csv; charset=utf-8');
-            // Suggest a filename with date
-            const filename = `users_export_${new Date().toISOString().slice(0,10)}.csv`;
-            res.attachment(filename);
-            return res.send(csv);
+        const parser = new Parser({ fields, quote: '"' });
+        const csv = parser.parse(rows);
+        res.header('Content-Type', 'text/csv; charset=utf-8');
+        // Suggest a filename with date
+        const filename = `users_export_${new Date().toISOString().slice(0, 10)}.csv`;
+        res.attachment(filename);
+        return res.send(csv);
     } catch (error) {
         console.error('Error exporting users as CSV:', error);
         res.status(500).json({ message: 'Failed to export users as CSV', error: error.message });
@@ -287,14 +287,14 @@ const deleteUser = async (req, res) => {
             return res.status(403).json({ message: 'Access denied. Admin only.' });
         }
         const userId = req.params.id;
-            const deleted = await User.findByIdAndDelete(userId);
-            if (!deleted) {
-                return res.status(404).json({ message: 'User not found' });
-            }
+        const deleted = await User.findByIdAndDelete(userId);
+        if (!deleted) {
+            return res.status(404).json({ message: 'User not found' });
+        }
 
-            // Post-delete family cleanup removed (family model deprecated)
+        // Post-delete family cleanup removed (family model deprecated)
 
-            res.status(200).json({ message: 'User deleted successfully' });
+        res.status(200).json({ message: 'User deleted successfully' });
     } catch (error) {
         console.error('Error deleting user:', error);
         res.status(500).json({ message: 'Failed to delete user', error: error.message });
@@ -439,16 +439,21 @@ const createUser = async (req, res) => {
         await user.save();
         const userObj = user.toObject();
         delete userObj.password;
-        // Send credentials email to created user (non-blocking)
+
+        // Send response immediately, don't wait for email
+        res.status(201).json(userObj);
+
+        // Fire-and-forget: send credentials email without blocking
+        // This prevents the form from stalling if email service is slow
         try {
             const fullName = `${firstName} ${lastName}`;
             const { sendCredentialsEmail } = require('../config/mail');
-            await sendCredentialsEmail(email, fullName, user.customId, password);
-        } catch (emailError) {
-            console.error('Failed to send credentials email to created user:', emailError);
+            sendCredentialsEmail(email, fullName, user.customId, password)
+                .then(() => console.log('Credentials email sent to:', email))
+                .catch((emailError) => console.error('Failed to send credentials email to created user:', emailError));
+        } catch (emailSetupError) {
+            console.error('Error setting up credentials email:', emailSetupError);
         }
-
-        res.status(201).json(userObj);
     } catch (error) {
         console.error('Error creating user:', error);
         res.status(500).json({ message: 'Error creating user', error: error.message });

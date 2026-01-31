@@ -15,12 +15,14 @@ const createCourseRegistration = async (req, res) => {
     await registration.save();
     console.log('Course registration saved:', { id: registration._id, email, name, courseId, courseTitle });
 
+    // Fire-and-forget: send email without blocking the response
+    // This prevents the form from stalling if email service is slow
     try {
-      await sendMailEducationRegistration(email, name, courseTitle);
-      console.log(`Education registration email sent to ${email}`);
-    } catch (emailError) {
-      console.error(`Failed to send education registration email:`, emailError);
-      // Do not block the response if email fails
+      sendMailEducationRegistration(email, name, courseTitle)
+        .then(() => console.log(`Education registration email sent to ${email}`))
+        .catch((emailError) => console.error(`Failed to send education registration email:`, emailError));
+    } catch (emailSetupError) {
+      console.error('Error setting up education email:', emailSetupError);
     }
 
     // Log before sending response
