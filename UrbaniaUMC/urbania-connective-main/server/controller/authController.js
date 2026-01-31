@@ -122,7 +122,18 @@ const register = async (req, res) => {
 
         console.log('Registration successful:', { userId: user._id, email: user.email, roles: user.roles, customId: user.customId, gender: user.gender });
 
-        // Send response FIRST
+        // Send credentials email BEFORE response (required for Render free tier)
+        // Email has timeout protection so it won't hang forever
+        try {
+            const fullName = `${firstName} ${lastName}`;
+            const { sendCredentialsEmail } = require('../config/mail');
+            await sendCredentialsEmail(email, fullName, user.customId, password);
+            console.log('Credentials email sent successfully to:', email);
+        } catch (emailError) {
+            console.error('Failed to send credentials email:', emailError);
+            // Continue with response even if email fails
+        }
+
         res.status(201).json({
             message: 'User registered successfully',
             token,
@@ -153,18 +164,6 @@ const register = async (req, res) => {
                 email: user.email,
                 isActive: true
             } : null
-        });
-
-        // Send credentials email AFTER response (using setImmediate to ensure it runs in next tick)
-        setImmediate(async () => {
-            try {
-                const fullName = `${firstName} ${lastName}`;
-                const { sendCredentialsEmail } = require('../config/mail');
-                await sendCredentialsEmail(email, fullName, user.customId, password);
-                console.log('Credentials email sent successfully to:', email);
-            } catch (emailError) {
-                console.error('Failed to send credentials email:', emailError);
-            }
         });
     } catch (error) {
         console.error('Registration error:', error);

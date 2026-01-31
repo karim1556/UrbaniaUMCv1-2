@@ -7,11 +7,13 @@ const createTransporter = () => {
   const hasUser = !!process.env.GMAIL_USER;
   const hasPass = !!process.env.GMAIL_APP_PASS;
 
+  console.log('📧 Email config check:', {
+    GMAIL_USER: hasUser ? 'SET' : 'MISSING',
+    GMAIL_APP_PASS: hasPass ? 'SET' : 'MISSING'
+  });
+
   if (!hasUser || !hasPass) {
-    console.error('⚠️ EMAIL CONFIG MISSING:', {
-      GMAIL_USER: hasUser ? 'SET' : 'MISSING',
-      GMAIL_APP_PASS: hasPass ? 'SET' : 'MISSING'
-    });
+    console.error('⚠️ EMAIL CONFIG MISSING - emails will not be sent!');
   }
 
   return nodemailer.createTransport({
@@ -19,16 +21,29 @@ const createTransporter = () => {
     auth: {
       user: process.env.GMAIL_USER,
       pass: process.env.GMAIL_APP_PASS
-    }
+    },
+    // Add timeouts to prevent hanging
+    connectionTimeout: 10000, // 10 seconds
+    greetingTimeout: 10000,
+    socketTimeout: 15000
   });
 };
 
-// Retry function for email sending
-const retry = async (fn, retries = 3, delay = 1000) => {
+// Timeout wrapper - fails fast if email takes too long
+const withTimeout = (promise, ms, errorMessage) => {
+  const timeout = new Promise((_, reject) => {
+    setTimeout(() => reject(new Error(errorMessage || `Operation timed out after ${ms}ms`)), ms);
+  });
+  return Promise.race([promise, timeout]);
+};
+
+// Retry function for email sending (reduced retries for speed)
+const retry = async (fn, retries = 2, delay = 500) => {
   try {
     return await fn();
   } catch (error) {
     if (retries === 0) throw error;
+    console.log(`Email retry, ${retries} attempts left...`);
     await new Promise(resolve => setTimeout(resolve, delay));
     return retry(fn, retries - 1, delay);
   }

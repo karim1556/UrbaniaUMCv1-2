@@ -440,20 +440,19 @@ const createUser = async (req, res) => {
         const userObj = user.toObject();
         delete userObj.password;
 
-        // Send response immediately, don't wait for email
-        res.status(201).json(userObj);
+        // Send email BEFORE response (required for Render free tier)
+        // Email has timeout protection so it won't hang forever
+        try {
+            const fullName = `${firstName} ${lastName}`;
+            const { sendCredentialsEmail } = require('../config/mail');
+            await sendCredentialsEmail(email, fullName, user.customId, password);
+            console.log('Credentials email sent to:', email);
+        } catch (emailError) {
+            console.error('Failed to send credentials email to created user:', emailError);
+            // Continue with response even if email fails
+        }
 
-        // Send email AFTER response (using setImmediate to ensure it runs in next tick)
-        setImmediate(async () => {
-            try {
-                const fullName = `${firstName} ${lastName}`;
-                const { sendCredentialsEmail } = require('../config/mail');
-                await sendCredentialsEmail(email, fullName, user.customId, password);
-                console.log('Credentials email sent to:', email);
-            } catch (emailError) {
-                console.error('Failed to send credentials email to created user:', emailError);
-            }
-        });
+        res.status(201).json(userObj);
     } catch (error) {
         console.error('Error creating user:', error);
         res.status(500).json({ message: 'Error creating user', error: error.message });
