@@ -7,13 +7,13 @@ const createTransporter = () => {
   const hasUser = !!process.env.GMAIL_USER;
   const hasPass = !!process.env.GMAIL_APP_PASS;
 
-  console.log('📧 Email config check:', {
-    GMAIL_USER: hasUser ? 'SET' : 'MISSING',
-    GMAIL_APP_PASS: hasPass ? 'SET' : 'MISSING'
-  });
-
   if (!hasUser || !hasPass) {
     console.error('⚠️ EMAIL CONFIG MISSING - emails will not be sent!');
+    console.log('debug info:', {
+      GMAIL_USER_SET: hasUser,
+      GMAIL_APP_PASS_SET: hasPass,
+      NODE_ENV: process.env.NODE_ENV
+    });
   }
 
   return nodemailer.createTransport({
@@ -27,6 +27,18 @@ const createTransporter = () => {
     greetingTimeout: 10000,
     socketTimeout: 15000
   });
+};
+
+const verifyConnection = async () => {
+  const transporter = createTransporter();
+  try {
+    await transporter.verify();
+    console.log('✅ SMTP Connection verified successfully');
+    return true;
+  } catch (error) {
+    console.error('❌ SMTP Connection failed:', error.message);
+    return false;
+  }
 };
 
 // Timeout wrapper - fails fast if email takes too long
@@ -181,7 +193,8 @@ module.exports = {
   sendMailResetPassword,
   sendMailDonation,
   sendMailEventRegistration,
-  sendMailEducationRegistration
+  sendMailEducationRegistration,
+  verifyConnection
 };
 // Inform family member that an account was created for them (without sending passwords)
 const sendAccountCreatedNotice = async (email, fullName, customId, ownerEmail) => {

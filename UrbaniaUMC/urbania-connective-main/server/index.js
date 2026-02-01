@@ -2,6 +2,7 @@ const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const connectDB = require('./config/db');
+const { sendMail, verifyConnection } = require('./config/mail');
 
 // Import routes
 const authRoutes = require('./routes/authRoutes');
@@ -100,6 +101,36 @@ app.use('/api/course-registration', courseRegistrationRoutes);
 app.use('/api/service-posts', servicePostRoutes);
 app.use('/api/groq', groqChatRoutes);
 
+// Test route for email diagnostics
+app.get('/api/test-email', async (req, res) => {
+  const targetEmail = req.query.email || process.env.GMAIL_USER;
+  console.log('🧪 Test email requested for:', targetEmail);
+
+  if (!targetEmail) {
+    return res.status(400).json({ error: 'No email provided and GMAIL_USER not set' });
+  }
+
+  try {
+    await sendMail(targetEmail, 'Urbania Test Email', '<h1>Test Success</h1><p>Your email configuration is working correctly.</p>');
+    res.json({
+      success: true,
+      message: 'Email sent successfully',
+      details: { to: targetEmail, timestamp: new Date() }
+    });
+  } catch (error) {
+    console.error('❌ Test email failed:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to send email',
+      error: {
+        message: error.message,
+        code: error.code,
+        response: error.response
+      }
+    });
+  }
+});
+
 // Basic route
 app.get('/', (req, res) => {
   res.json({ message: 'Welcome to the API' });
@@ -124,4 +155,10 @@ const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
   console.log(`API URL: http://localhost:${PORT}`);
+  // Verify email connection on startup
+  verifyConnection()
+    .then(isSuccess => {
+      if (isSuccess) console.log('📧 Email service is ready');
+      else console.log('⚠️ Email service could not be verified - check credentials');
+    });
 });
