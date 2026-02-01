@@ -1,96 +1,65 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 require('dotenv').config();
 const { getEventRegistrationReceiptHtml, getDonationReceiptHtml } = require('../utils/emailTemplates');
 
-const createTransporter = () => {
-  // Log credential status for debugging (without exposing actual values)
-  const hasUser = !!process.env.GMAIL_USER;
-  const hasPass = !!process.env.GMAIL_APP_PASS;
+// Initialize Resend client
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-  if (!hasUser || !hasPass) {
-    console.error('⚠️ EMAIL CONFIG MISSING - emails will not be sent!');
-    console.log('debug info:', {
-      GMAIL_USER_SET: hasUser,
-      GMAIL_APP_PASS_SET: hasPass,
-      NODE_ENV: process.env.NODE_ENV
-    });
-  }
-
-  return nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.GMAIL_USER,
-      pass: process.env.GMAIL_APP_PASS
-    },
-    // Add timeouts to prevent hanging
-    connectionTimeout: 10000, // 10 seconds
-    greetingTimeout: 10000,
-    socketTimeout: 15000
-  });
+// The "from" address - must be verified in Resend dashboard or use onboarding@resend.dev for testing
+const getFromAddress = () => {
+  return process.env.RESEND_FROM_EMAIL || 'Urbania Connective <onboarding@resend.dev>';
 };
 
 const verifyConnection = async () => {
-  const transporter = createTransporter();
-  try {
-    await transporter.verify();
-    console.log('✅ SMTP Connection verified successfully');
-    return true;
-  } catch (error) {
-    console.error('❌ SMTP Connection failed:', error.message);
+  const hasApiKey = !!process.env.RESEND_API_KEY;
+  console.log('📧 Email config check:', {
+    RESEND_API_KEY: hasApiKey ? 'SET' : 'MISSING',
+    RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL || 'Using default test address'
+  });
+
+  if (!hasApiKey) {
+    console.error('⚠️ RESEND_API_KEY MISSING - emails will not be sent!');
     return false;
   }
-};
 
-// Timeout wrapper - fails fast if email takes too long
-const withTimeout = (promise, ms, errorMessage) => {
-  const timeout = new Promise((_, reject) => {
-    setTimeout(() => reject(new Error(errorMessage || `Operation timed out after ${ms}ms`)), ms);
-  });
-  return Promise.race([promise, timeout]);
-};
-
-// Retry function for email sending (reduced retries for speed)
-const retry = async (fn, retries = 2, delay = 500) => {
-  try {
-    return await fn();
-  } catch (error) {
-    if (retries === 0) throw error;
-    console.log(`Email retry, ${retries} attempts left...`);
-    await new Promise(resolve => setTimeout(resolve, delay));
-    return retry(fn, retries - 1, delay);
-  }
+  console.log('✅ Resend API configured');
+  return true;
 };
 
 const sendMail = async (email, subject, html) => {
   console.log('📧 Attempting to send email to:', email);
 
-  const transporter = createTransporter();
-  const mailOptions = {
-    from: `Urbania Connective <${process.env.GMAIL_USER}>`,
-    to: email,
-    subject: subject,
-    html: html
-  };
-
   try {
-    await retry(async () => {
-      await transporter.sendMail(mailOptions);
-      console.log(`✅ Email sent successfully to ${email}`);
+    const { data, error } = await resend.emails.send({
+      from: getFromAddress(),
+      to: [email],
+      subject: subject,
+      html: html
     });
+
+    if (error) {
+      console.error('❌ EMAIL SEND FAILED:', {
+        to: email,
+        subject: subject,
+        error: error
+      });
+      throw new Error(error.message);
+    }
+
+    console.log(`✅ Email sent successfully to ${email}`, { id: data?.id });
+    return data;
   } catch (error) {
     console.error('❌ EMAIL SEND FAILED:', {
       to: email,
       subject: subject,
-      errorCode: error.code,
-      errorMessage: error.message,
-      errorResponse: error.response,
-      fullError: error.toString()
+      errorMessage: error.message
     });
     throw error;
   }
 };
 
 const sendMailContact = async (email, name, phoneNo, subject, message) => {
+  const adminEmail = process.env.ADMIN_EMAIL || process.env.GMAIL_USER || 'admin@example.com';
   const emailSubject = `Contact Form Submission: ${subject}`;
   const html = `
     <h1>New Contact Form Submission</h1>
@@ -100,7 +69,7 @@ const sendMailContact = async (email, name, phoneNo, subject, message) => {
     <p><strong>Message:</strong></p>
     <p>${message}</p>
   `;
-  await sendMail(process.env.GMAIL_USER, emailSubject, html); // sending to admin
+  await sendMail(adminEmail, emailSubject, html); // sending to admin
 
   const userSubject = "We've received your message";
   const userHtml = `
@@ -187,15 +156,6 @@ const sendMailEducationRegistration = async (email, name, courseTitle) => {
   await sendMail(email, subject, html);
 };
 
-module.exports = {
-  sendMail,
-  sendMailContact,
-  sendMailResetPassword,
-  sendMailDonation,
-  sendMailEventRegistration,
-  sendMailEducationRegistration,
-  verifyConnection
-};
 // Inform family member that an account was created for them (without sending passwords)
 const sendAccountCreatedNotice = async (email, fullName, customId, ownerEmail) => {
   const subject = 'An account was created for you on Urbania Connective';
@@ -213,5 +173,14 @@ const sendAccountCreatedNotice = async (email, fullName, customId, ownerEmail) =
   await sendMail(email, subject, html);
 };
 
-module.exports.sendAccountCreatedNotice = sendAccountCreatedNotice;
-module.exports.sendCredentialsEmail = sendCredentialsEmail;
+module.exports = {
+  sendMail,
+  sendMailContact,
+  sendMailResetPassword,
+  sendMailDonation,
+  sendMailEventRegistration,
+  sendMailEducationRegistration,
+  verifyConnection,
+  sendAccountCreatedNotice,
+  sendCredentialsEmail
+};
