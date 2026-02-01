@@ -293,7 +293,7 @@ const forgotPassword = async (req, res) => {
 
         await sendMailResetPassword(
             user.email,
-            user.name || user.username,
+            user.firstName || 'User',
             resetLink
         );
 
