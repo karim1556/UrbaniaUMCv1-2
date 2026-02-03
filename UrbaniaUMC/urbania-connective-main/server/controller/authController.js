@@ -55,7 +55,8 @@ const register = async (req, res) => {
         // Log the generated gender token
         console.log('Generated gender token:', genderToken);
 
-        // Generate customId: 'R' (for Rustomjee) + first 2 letters of next word in buildingName (if present, uppercase) + wing (uppercase) + flatNo + first 2 digits of mobile + gender token (M/F)
+        // Generate customId: 'R' + first 2 letters of second word in buildingName + wing + flatNo + gender + last 2 digits of mobile
+        // Example: RAZ + C2302 + M + 99 = RAZC2302M99
         let buildingCode = 'R';
         const buildingWords = (buildingName || '').trim().split(/\s+/);
         if (buildingWords.length > 1 && buildingWords[1].length >= 2) {
@@ -63,11 +64,10 @@ const register = async (req, res) => {
         } else if (buildingWords[0] && buildingWords[0].length >= 2) {
             buildingCode += buildingWords[0].substring(0, 2).toUpperCase();
         }
-        const wingCode = (wing || '').toUpperCase();
-        const flatCode = flatNo || '';
-        const mobileCode = (mobile || '').substring(0, 2);
+        const roomNumber = `${(wing || '').toUpperCase()}${flatNo || ''}`;
+        const lastTwoDigits = (mobile || '').slice(-2);
         // Always append gender token (M/F) at the end
-        let customId = `${buildingCode}${wingCode}${flatCode}${mobileCode}${genderToken}`;
+        let customId = `${buildingCode}${roomNumber}${genderToken}${lastTwoDigits}`;
         console.log('Generated customId:', customId);
 
         // Ensure uniqueness (append a number if needed)

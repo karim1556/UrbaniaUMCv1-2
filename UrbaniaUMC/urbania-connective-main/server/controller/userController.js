@@ -387,23 +387,24 @@ const createUser = async (req, res) => {
             return res.status(409).json({ message: 'User with this email or mobile already exists.' });
         }
 
-        // Generate customId using same logic as public registration:
-        // 'R' + first 2 letters of second word in buildingName (if present, uppercase) + wing (uppercase) + flatNo + first 2 digits of mobile
+        // Generate customId: 'R' + first 2 letters of second word in buildingName + wing + flatNo + gender + last 2 digits of mobile
+        // Example: RAZ + C2302 + M + 99 = RAZC2302M99
         let buildingCode = 'R';
         const buildingWords = (buildingName || '').trim().split(/\s+/);
         if (buildingWords.length > 1 && buildingWords[1].length >= 2) {
             buildingCode += buildingWords[1].substring(0, 2).toUpperCase();
+        } else if (buildingWords[0] && buildingWords[0].length >= 2) {
+            buildingCode += buildingWords[0].substring(0, 2).toUpperCase();
         }
-        const wingCode = (wing || '').toUpperCase();
-        const flatCode = flatNo || '';
-        const mobileCode = (mobile || '').substring(0, 2);
+        const roomNumber = `${(wing || '').toUpperCase()}${flatNo || ''}`;
+        const lastTwoDigits = (mobile || '').slice(-2);
         // Append gender token if provided (M/F)
         const g = String(gender || '').trim().toUpperCase();
         let genderToken = '';
         if (g.startsWith('M')) genderToken = 'M';
         else if (g.startsWith('F')) genderToken = 'F';
         // Always append (may be empty)
-        let customId = `${buildingCode}${wingCode}${flatCode}${mobileCode}${genderToken}`;
+        let customId = `${buildingCode}${roomNumber}${genderToken}${lastTwoDigits}`;
         // Ensure uniqueness (append a number if needed)
         let uniqueCustomId = customId;
         let suffix = 1;
